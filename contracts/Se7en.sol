@@ -1,26 +1,3 @@
-/*
- *      SSSSSSSSSSSSSSS EEEEEEEEEEEEEEEEEEEEEE77777777777777777777EEEEEEEEEEEEEEEEEEEEEENNNNNNNN        NNNNNNNN
- *    SS:::::::::::::::SE::::::::::::::::::::E7::::::::::::::::::7E::::::::::::::::::::EN:::::::N       N::::::N
- *   S:::::SSSSSS::::::SE::::::::::::::::::::E7::::::::::::::::::7E::::::::::::::::::::EN::::::::N      N::::::N
- *   S:::::S     SSSSSSSEE::::::EEEEEEEEE::::E777777777777:::::::7EE::::::EEEEEEEEE::::EN:::::::::N     N::::::N
- *   S:::::S              E:::::E       EEEEEE           7::::::7   E:::::E       EEEEEEN::::::::::N    N::::::N
- *   S:::::S              E:::::E                       7::::::7    E:::::E             N:::::::::::N   N::::::N
- *    S::::SSSS           E::::::EEEEEEEEEE            7::::::7     E::::::EEEEEEEEEE   N:::::::N::::N  N::::::N
- *     SS::::::SSSSS      E:::::::::::::::E           7::::::7      E:::::::::::::::E   N::::::N N::::N N::::::N
- *       SSS::::::::SS    E:::::::::::::::E          7::::::7       E:::::::::::::::E   N::::::N  N::::N:::::::N
- *          SSSSSS::::S   E::::::EEEEEEEEEE         7::::::7        E::::::EEEEEEEEEE   N::::::N   N:::::::::::N
- *               S:::::S  E:::::E                  7::::::7         E:::::E             N::::::N    N::::::::::N
- *               S:::::S  E:::::E       EEEEEE    7::::::7          E:::::E       EEEEEEN::::::N     N:::::::::N
- *   SSSSSSS     S:::::SEE::::::EEEEEEEE:::::E   7::::::7         EE::::::EEEEEEEE:::::EN::::::N      N::::::::N
- *   S::::::SSSSSS:::::SE::::::::::::::::::::E  7::::::7          E::::::::::::::::::::EN::::::N       N:::::::N
- *   S:::::::::::::::SS E::::::::::::::::::::E 7::::::7           E::::::::::::::::::::EN::::::N        N::::::N
- *    SSSSSSSSSSSSSSS   EEEEEEEEEEEEEEEEEEEEEE77777777            EEEEEEEEEEEEEEEEEEEEEENNNNNNNN         NNNNNNN
- *
- * https://t.me/SE7ENBSC
- * https://se7enbsc.com
- *
- */
-
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.6.2;
