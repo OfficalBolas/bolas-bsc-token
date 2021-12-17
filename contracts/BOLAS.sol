@@ -146,20 +146,6 @@ contract BOLAS is ERC20, Adminable {
 
     // Fee related events
     event FeesPaid(address indexed from, uint256 value);
-    event SetHolyDayFee(
-        uint16 hourIndex,
-        uint16 rewardBuy,
-        uint16 liqBuy,
-        uint16 rewardSell,
-        uint16 liqSell
-    );
-    event SetUnholyDayFee(
-        uint16 dayIndex,
-        uint16 rewardBuy,
-        uint16 liqBuy,
-        uint16 rewardSell,
-        uint16 liqSell
-    );
 
     constructor() public ERC20("BOLAS", "BOLAS") {
         // Defaults: Buy fees decrease throughout the week, Sell fees too high to sell
