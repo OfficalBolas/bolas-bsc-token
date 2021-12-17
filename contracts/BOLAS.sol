@@ -11,7 +11,7 @@ import "./IUniswapV2Pair.sol";
 import "./IUniswapV2Factory.sol";
 import "./IUniswapV2Router.sol";
 
-contract SE7EN is ERC20, Adminable {
+contract BOLAS is ERC20, Adminable {
     using SafeMath for uint256;
 
     IUniswapV2Router02 public uniswapV2Router;
@@ -19,7 +19,7 @@ contract SE7EN is ERC20, Adminable {
 
     bool private swapping;
 
-    Se7enDividendTracker public dividendTracker;
+    BOLASDividendTracker public dividendTracker;
 
     address public liquidityWallet;
 
@@ -161,7 +161,7 @@ contract SE7EN is ERC20, Adminable {
         uint16 liqSell
     );
 
-    constructor() public ERC20("Se7en", "SE7EN") {
+    constructor() public ERC20("BOLAS", "BOLAS") {
         // Defaults: Buy fees decrease throughout the week, Sell fees too high to sell
         _setUnholyDayFee(0, 1000, 500, 5000, 5000);
         // Monday
@@ -226,7 +226,7 @@ contract SE7EN is ERC20, Adminable {
         _setHolyDayFee(23, 900, 400, 1870, 870);
         // Sunday 23:00
 
-        dividendTracker = new Se7enDividendTracker();
+        dividendTracker = new BOLASDividendTracker();
 
         liquidityWallet = owner();
 
@@ -272,16 +272,16 @@ contract SE7EN is ERC20, Adminable {
     function updateDividendTracker(address newAddress) public onlyAdmin(1) {
         require(
             newAddress != address(dividendTracker),
-            "Se7en: The dividend tracker already has that address"
+                "BOLAS: The dividend tracker already has that address"
         );
 
-        Se7enDividendTracker newDividendTracker = Se7enDividendTracker(
+        BOLASDividendTracker newDividendTracker = BOLASDividendTracker(
             payable(newAddress)
         );
 
         require(
             newDividendTracker.owner() == address(this),
-            "Se7en: The new dividend tracker must be owned by the Se7en token contract"
+                "BOLAS: The new dividend tracker must be owned by the BOLAS token contract"
         );
 
         newDividendTracker.excludeFromDividends(address(newDividendTracker));
@@ -297,7 +297,7 @@ contract SE7EN is ERC20, Adminable {
     function updateUniswapV2Router(address newAddress) public onlyAdmin(1) {
         require(
             newAddress != address(uniswapV2Router),
-            "Se7en: The router already has that address"
+                "BOLAS: The router already has that address"
         );
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
@@ -309,7 +309,7 @@ contract SE7EN is ERC20, Adminable {
     {
         require(
             _isExcludedFromFees[account] != excluded,
-            "Se7en: Account is already the value of 'excluded'"
+                "BOLAS: Account is already the value of 'excluded'"
         );
         _isExcludedFromFees[account] = excluded;
 
@@ -344,7 +344,7 @@ contract SE7EN is ERC20, Adminable {
     {
         require(
             pair != uniswapV2Pair,
-            "Se7en: The PancakeSwap pair cannot be removed from automatedMarketMakerPairs"
+                "BOLAS: The PancakeSwap pair cannot be removed from automatedMarketMakerPairs"
         );
 
         _setAutomatedMarketMakerPair(pair, value);
@@ -353,7 +353,7 @@ contract SE7EN is ERC20, Adminable {
     function _setAutomatedMarketMakerPair(address pair, bool value) private {
         require(
             automatedMarketMakerPairs[pair] != value,
-            "Se7en: Automated market maker pair is already set to that value"
+                "BOLAS: Automated market maker pair is already set to that value"
         );
         automatedMarketMakerPairs[pair] = value;
 
@@ -370,7 +370,7 @@ contract SE7EN is ERC20, Adminable {
     {
         require(
             newLiquidityWallet != liquidityWallet,
-            "Se7en: The liquidity wallet is already this address"
+                "BOLAS: The liquidity wallet is already this address"
         );
         excludeFromFees(newLiquidityWallet, true);
         emit LiquidityWalletUpdated(newLiquidityWallet, liquidityWallet);
@@ -380,11 +380,11 @@ contract SE7EN is ERC20, Adminable {
     function updateGasForProcessing(uint256 newValue) public onlyAdmin(4) {
         require(
             newValue >= 200000 && newValue <= 500000,
-            "Se7en: gasForProcessing must be between 200,000 and 500,000"
+                "BOLAS: gasForProcessing must be between 200,000 and 500,000"
         );
         require(
             newValue != gasForProcessing,
-            "Se7en: Cannot update gasForProcessing to same value"
+                "BOLAS: Cannot update gasForProcessing to same value"
         );
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
@@ -523,7 +523,7 @@ contract SE7EN is ERC20, Adminable {
         if (!tradingIsEnabled) {
             require(
                 canTransferBeforeTradingIsEnabled[from],
-                "Se7en: This account cannot send tokens until trading is enabled"
+                    "BOLAS: This account cannot send tokens until trading is enabled"
             );
         }
 
@@ -539,7 +539,7 @@ contract SE7EN is ERC20, Adminable {
         if (isFixedSaleBuy) {
             require(
                 block.timestamp >= fixedSaleStartTimestamp,
-                "Se7en: The fixed-sale has not started yet."
+                    "BOLAS: The fixed-sale has not started yet."
             );
 
             bool openToEveryone = block.timestamp.sub(
@@ -551,7 +551,7 @@ contract SE7EN is ERC20, Adminable {
             if (!openToEveryone) {
                 require(
                     fixedSaleEarlyParticipants[to],
-                    "Se7en: The fixed-sale is only available to certain participants at the start"
+                        "BOLAS: The fixed-sale is only available to certain participants at the start"
                 );
             }
 
@@ -577,7 +577,7 @@ contract SE7EN is ERC20, Adminable {
         ) {
             require(
                 !fixedSaleEarlyParticipants[from],
-                "Se7en: The fixed-sale participants must wait 2 days to sell"
+                    "BOLAS: The fixed-sale participants must wait 2 days to sell"
             );
         }
 
@@ -1040,7 +1040,7 @@ contract SE7EN is ERC20, Adminable {
     }
 }
 
-contract Se7enDividendTracker is DividendPayingToken, Adminable {
+contract BOLASDividendTracker is DividendPayingToken, Adminable {
     using SafeMath for uint256;
     using SafeMathInt for int256;
     using IterableMapping for IterableMapping.Map;
@@ -1066,7 +1066,7 @@ contract Se7enDividendTracker is DividendPayingToken, Adminable {
 
     constructor()
     public
-    DividendPayingToken("Se7en_Dividend_Tracker", "Se7en_Dividend_Tracker")
+    DividendPayingToken("BOLAS_Dividend_Tracker", "BOLAS_Dividend_Tracker")
     {
         claimWait = 3600;
         minimumTokenBalanceForDividends = 10000 * (10 ** 18);
@@ -1078,13 +1078,13 @@ contract Se7enDividendTracker is DividendPayingToken, Adminable {
         address,
         uint256
     ) internal override {
-        require(false, "Se7en_Dividend_Tracker: No transfers allowed");
+        require(false, "BOLAS_Dividend_Tracker: No transfers allowed");
     }
 
     function withdrawDividend() public override {
         require(
             false,
-            "Se7en_Dividend_Tracker: withdrawDividend disabled. Use the 'claim' function on the main Se7en contract."
+                "BOLAS_Dividend_Tracker: withdrawDividend disabled. Use the 'claim' function on the main BOLAS contract."
         );
     }
 
@@ -1102,11 +1102,11 @@ contract Se7enDividendTracker is DividendPayingToken, Adminable {
     function updateClaimWait(uint256 newClaimWait) external onlyAdmin(2) {
         require(
             newClaimWait >= 3600 && newClaimWait <= 86400,
-            "Se7en_Dividend_Tracker: claimWait must be updated to between 1 and 24 hours"
+                "BOLAS_Dividend_Tracker: claimWait must be updated to between 1 and 24 hours"
         );
         require(
             newClaimWait != claimWait,
-            "Se7en_Dividend_Tracker: Cannot update claimWait to same value"
+                "BOLAS_Dividend_Tracker: Cannot update claimWait to same value"
         );
         emit ClaimWaitUpdated(newClaimWait, claimWait);
         claimWait = newClaimWait;
