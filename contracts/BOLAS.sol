@@ -856,38 +856,6 @@ contract BOLAS is ERC20, Adminable {
         (totalFees, liquidityFee) = _getFees(block.timestamp, from, to);
     }
 
-    function _setUnholyDayFee(
-        uint16 dayIndex,
-        uint16 rewardBuy,
-        uint16 liqBuy,
-        uint16 rewardSell,
-        uint16 liqSell
-    ) internal {
-        FeePair memory current;
-        current.rewardBuyFee = rewardBuy;
-        current.liquidityBuyFee = liqBuy;
-        current.rewardSellFee = rewardSell;
-        current.liquiditySellFee = liqSell;
-        unholyDayFee[dayIndex] = current;
-        emit SetUnholyDayFee(dayIndex, rewardBuy, liqBuy, rewardSell, liqSell);
-    }
-
-    function _setHolyDayFee(
-        uint16 hourIndex,
-        uint16 rewardBuy,
-        uint16 liqBuy,
-        uint16 rewardSell,
-        uint16 liqSell
-    ) internal {
-        FeePair memory current;
-        current.rewardBuyFee = rewardBuy;
-        current.liquidityBuyFee = liqBuy;
-        current.rewardSellFee = rewardSell;
-        current.liquiditySellFee = liqSell;
-        holyDayFee[hourIndex] = current;
-        emit SetHolyDayFee(hourIndex, rewardBuy, liqBuy, rewardSell, liqSell);
-    }
-
     function getCurrentFees(address from, address to)
     external
     view
@@ -902,70 +870,6 @@ contract BOLAS is ERC20, Adminable {
         address to
     ) external view returns (uint256 totalFees, uint256 liquidityFee) {
         (totalFees, liquidityFee) = _getFees(timestamp, from, to);
-    }
-
-    function getAllHolyDayFees()
-    external
-    view
-    returns (FeePair[24] memory pairs)
-    {
-        return holyDayFee;
-    }
-
-    function getAllUnholyDayFees()
-    external
-    view
-    returns (FeePair[6] memory pairs)
-    {
-        return unholyDayFee;
-    }
-
-    function setUnholyDayFee(
-        uint16 dayIndex,
-        uint16 rewardBuy,
-        uint16 liqBuy,
-        uint16 rewardSell,
-        uint16 liqSell
-    ) external onlyAdmin(2) {
-        _setUnholyDayFee(dayIndex, rewardBuy, liqBuy, rewardSell, liqSell);
-    }
-
-    function setHolyDayFee(
-        uint16 hourIndex,
-        uint16 rewardBuy,
-        uint16 liqBuy,
-        uint16 rewardSell,
-        uint16 liqSell
-    ) external onlyAdmin(2) {
-        _setHolyDayFee(hourIndex, rewardBuy, liqBuy, rewardSell, liqSell);
-    }
-
-    function setUnholyDayFee(FeePair[6] calldata pairs) external onlyAdmin(2) {
-        FeePair memory pair;
-        for (uint8 i = 0; i < pairs.length; i++) {
-            pair = pairs[i];
-            _setUnholyDayFee(
-                i,
-                pair.rewardBuyFee,
-                pair.liquidityBuyFee,
-                pair.rewardSellFee,
-                pair.liquiditySellFee
-            );
-        }
-    }
-
-    function setHolyDayFee(FeePair[24] calldata pairs) external onlyAdmin(2) {
-        FeePair memory pair;
-        for (uint8 i = 0; i < pairs.length; i++) {
-            pair = pairs[i];
-            _setHolyDayFee(
-                i,
-                pair.rewardBuyFee,
-                pair.liquidityBuyFee,
-                pair.rewardSellFee,
-                pair.liquiditySellFee
-            );
-        }
     }
 
     function setStartingConditions(
