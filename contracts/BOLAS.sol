@@ -182,7 +182,7 @@ contract BOLAS is ERC20, Adminable {
 
         require(
             newDividendTracker.owner() == address(this),
-                "BOLAS: The new dividend tracker must be owned by the BOLAS token contract"
+            "BOLAS: The new dividend tracker must be owned by the BOLAS token contract"
         );
 
         newDividendTracker.excludeFromDividends(address(newDividendTracker));
@@ -392,8 +392,7 @@ contract BOLAS is ERC20, Adminable {
 
         bool tradingIsEnabled = _getTradingIsEnabled();
 
-        // only early participant addresses can make transfers after the fixed-sale has started
-        // and before the public presale is over
+        // only specified addresses can make transfers before the trading is enabled
         if (!tradingIsEnabled) {
             require(
                 canTransferBeforeTradingIsEnabled[from],
@@ -404,55 +403,6 @@ contract BOLAS is ERC20, Adminable {
         if (amount == 0) {
             super._transfer(from, to, 0);
             return;
-        }
-
-        bool isFixedSaleBuy = from == fixedSaleWallet && to != owner();
-
-        // the fixed-sale can only send tokens to the owner or early participants of the fixed sale in the first 10 minutes,
-        // or 600 transactions, whichever is first.
-        if (isFixedSaleBuy) {
-            require(
-                block.timestamp >= fixedSaleStartTimestamp,
-                    "BOLAS: The fixed-sale has not started yet."
-            );
-
-            bool openToEveryone = block.timestamp.sub(
-                fixedSaleStartTimestamp
-            ) >=
-            fixedSaleEarlyParticipantDuration ||
-            numberOfFixedSaleBuys >= fixedSaleEarlyParticipantBuysThreshold;
-
-            if (!openToEveryone) {
-                require(
-                    fixedSaleEarlyParticipants[to],
-                        "BOLAS: The fixed-sale is only available to certain participants at the start"
-                );
-            }
-
-            if (!fixedSaleBuyers[to]) {
-                fixedSaleBuyers[to] = true;
-                numberOfFixedSaleBuys = numberOfFixedSaleBuys.add(1);
-            }
-
-            emit FixedSaleBuy(
-                to,
-                amount,
-                fixedSaleEarlyParticipants[to],
-                numberOfFixedSaleBuys
-            );
-        }
-
-        // early participant cannot sell during the first two days
-        if (
-            !swapping &&
-        tradingIsEnabled &&
-        !_canEarlyParticipantSell() &&
-        automatedMarketMakerPairs[to] // sells only by detecting transfer to automated market maker pair
-        ) {
-            require(
-                !fixedSaleEarlyParticipants[from],
-                    "BOLAS: The fixed-sale participants must wait 2 days to sell"
-            );
         }
 
         // check max sell transaction
@@ -733,11 +683,7 @@ contract BOLAS is ERC20, Adminable {
     }
 
     function setStartingConditions(
-        uint256 _fixedSaleEarlyParticipantDuration,
-        uint256 _fixedSaleEarlyParticipantBuysThreshold,
-        uint256 _fixedSaleStartTimestamp,
-        uint256 _tradingEnabledTimestamp,
-        address _fixedSaleWallet
+        uint256 _tradingEnabledTimestamp
     ) external onlyAdmin(2) {
         require(
             !fixStartingConditions,
