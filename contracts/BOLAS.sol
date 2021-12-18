@@ -48,22 +48,6 @@ contract BOLAS is ERC20, Adminable {
     // timestamp for when the token can be traded freely on PanackeSwap
     uint256 public tradingEnabledTimestamp = 1624579200; // Default: Date and time (GMT): Friday, June 25, 2021 0:00:00
 
-    address public fixedSaleWallet;
-
-    // timestamp for when purchases on the fixed-sale are available to early participants
-    uint256 public fixedSaleStartTimestamp = 1624579200; // Default: Date and time (GMT): Friday, June 25, 2021 0:00:00
-
-    // the fixed-sale will be open to the public 24 hour after fixedSaleStartTimestamp,
-    // or after 107 buys, whichever comes first.
-    uint256 public fixedSaleEarlyParticipantDuration = _oneDay;
-    uint256 public fixedSaleEarlyParticipantBuysThreshold = 107;
-
-    // track number of buys. once this reaches fixedSaleEarlyParticipantBuysThreshold,
-    // the fixed-sale will be open to the public even if it's still in the first 10 minutes
-    uint256 public numberOfFixedSaleBuys;
-    // track who has bought
-    mapping(address => bool) public fixedSaleBuyers;
-
     /******************/
 
     // exlcude from fees and max transaction amount
@@ -71,8 +55,6 @@ contract BOLAS is ERC20, Adminable {
 
     // addresses that can make transfers before presale is over
     mapping(address => bool) private canTransferBeforeTradingIsEnabled;
-
-    mapping(address => bool) public fixedSaleEarlyParticipants;
 
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
     // could be subject to a maximum transfer amount
@@ -103,8 +85,6 @@ contract BOLAS is ERC20, Adminable {
     event ExcludeFromFees(address indexed account, bool isExcluded);
     event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
 
-    event FixedSaleEarlyParticipantsAdded(address[] participants);
-
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
 
     event LiquidityWalletUpdated(
@@ -115,13 +95,6 @@ contract BOLAS is ERC20, Adminable {
     event GasForProcessingUpdated(
         uint256 indexed newValue,
         uint256 indexed oldValue
-    );
-
-    event FixedSaleBuy(
-        address indexed account,
-        uint256 indexed amount,
-        bool indexed earlyParticipant,
-        uint256 numberOfBuyers
     );
 
     event SwapAndLiquify(
@@ -200,7 +173,7 @@ contract BOLAS is ERC20, Adminable {
     function updateDividendTracker(address newAddress) public onlyAdmin(1) {
         require(
             newAddress != address(dividendTracker),
-                "BOLAS: The dividend tracker already has that address"
+            "BOLAS: The dividend tracker already has that address"
         );
 
         BOLASDividendTracker newDividendTracker = BOLASDividendTracker(
@@ -253,17 +226,6 @@ contract BOLAS is ERC20, Adminable {
         }
 
         emit ExcludeMultipleAccountsFromFees(accounts, excluded);
-    }
-
-    function addFixedSaleEarlyParticipants(address[] calldata accounts)
-    external
-    onlyAdmin(2)
-    {
-        for (uint256 i = 0; i < accounts.length; i++) {
-            fixedSaleEarlyParticipants[accounts[i]] = true;
-        }
-
-        emit FixedSaleEarlyParticipantsAdded(accounts);
     }
 
     function setAutomatedMarketMakerPair(address pair, bool value)
@@ -416,24 +378,8 @@ contract BOLAS is ERC20, Adminable {
         return block.timestamp >= tradingEnabledTimestamp;
     }
 
-    function _earlyParticipantSellDate() internal view returns (uint256) {
-        return tradingEnabledTimestamp.add(_oneDay * 2);
-    }
-
-    function _canEarlyParticipantSell() internal view returns (bool) {
-        return block.timestamp >= _earlyParticipantSellDate();
-    }
-
     function getTradingIsEnabled() public view returns (bool) {
         return _getTradingIsEnabled();
-    }
-
-    function canEarlyParticipantSell() public view returns (bool) {
-        return _canEarlyParticipantSell();
-    }
-
-    function earlyParticipantSellDate() public view returns (uint256) {
-        return _earlyParticipantSellDate();
     }
 
     function _transfer(
@@ -797,32 +743,7 @@ contract BOLAS is ERC20, Adminable {
             !fixStartingConditions,
             "The starting conditions are fixed forever."
         );
-        fixedSaleEarlyParticipantDuration = _fixedSaleEarlyParticipantDuration;
-        fixedSaleEarlyParticipantBuysThreshold = _fixedSaleEarlyParticipantBuysThreshold;
-        fixedSaleStartTimestamp = _fixedSaleStartTimestamp;
         tradingEnabledTimestamp = _tradingEnabledTimestamp;
-
-        // Only process updates
-        if (
-            fixedSaleWallet != _fixedSaleWallet &&
-            _fixedSaleWallet != address(0)
-        ) {
-            // Note each time a new fixedSaleWallet is set it will be excluded from dividends
-
-            // remove old wallet from transfer before trading enabled
-            canTransferBeforeTradingIsEnabled[fixedSaleWallet] = false;
-
-            // Update new fixed sale wallet
-            fixedSaleWallet = _fixedSaleWallet;
-
-            // exclude from receiving dividends
-            try
-            dividendTracker.excludeFromDividends(_fixedSaleWallet)
-            {} catch {}
-
-            // enable owner and fixed-sale wallet to send tokens before presales are over
-            canTransferBeforeTradingIsEnabled[_fixedSaleWallet] = true;
-        }
     }
 
     function setFixStartingConditions() external onlyAdmin(2) {
