@@ -88,10 +88,7 @@ contract BOLAS is ERC20, Adminable {
 
     uint256 public referenceTimeStamp = 868233600; // Date and time (GMT): Monday, July 7, 1997 0:00:00
 
-    // Fees of the week from Monday to Saturday
-    FeePair[6] public unholyDayFee;
-    // Fees of Sunday from Midnight to Midnight
-    FeePair[24] public holyDayFee;
+    FeePair public feeRates;
 
     event UpdateDividendTracker(
         address indexed newAddress,
@@ -146,71 +143,16 @@ contract BOLAS is ERC20, Adminable {
 
     // Fee related events
     event FeesPaid(address indexed from, uint256 value);
+    event SetFees(
+        uint16 rewardBuy,
+        uint16 liqBuy,
+        uint16 rewardSell,
+        uint16 liqSell
+    );
 
     constructor() public ERC20("BOLAS", "BOLAS") {
-        // Defaults: Buy fees decrease throughout the week, Sell fees too high to sell
-        _setUnholyDayFee(0, 1000, 500, 5000, 5000);
-        // Monday
-        _setUnholyDayFee(1, 980, 480, 5000, 5000);
-        // Tuesday
-        _setUnholyDayFee(2, 960, 460, 5000, 5000);
-        // Wednesday
-        _setUnholyDayFee(3, 940, 440, 5000, 5000);
-        // Thursday
-        _setUnholyDayFee(4, 920, 420, 5000, 5000);
-        // Friday
-        _setUnholyDayFee(5, 900, 400, 5000, 5000);
-        // Saturday
-
-        // Default: Buy fees fixed, Sell fees decrease through Sunday
-        _setHolyDayFee(0, 900, 400, 2100, 1100);
-        // Sunday 00:00
-        _setHolyDayFee(1, 900, 400, 2090, 1090);
-        // Sunday 01:00
-        _setHolyDayFee(2, 900, 400, 2080, 1080);
-        // Sunday 02:00
-        _setHolyDayFee(3, 900, 400, 2070, 1070);
-        // Sunday 03:00
-        _setHolyDayFee(4, 900, 400, 2060, 1060);
-        // Sunday 04:00
-        _setHolyDayFee(5, 900, 400, 2050, 1050);
-        // Sunday 05:00
-        _setHolyDayFee(6, 900, 400, 2040, 1040);
-        // Sunday 06:00
-        _setHolyDayFee(7, 900, 400, 2030, 1030);
-        // Sunday 07:00
-        _setHolyDayFee(8, 900, 400, 2020, 1020);
-        // Sunday 08:00
-        _setHolyDayFee(9, 900, 400, 2010, 1010);
-        // Sunday 09:00
-        _setHolyDayFee(10, 900, 400, 2000, 1000);
-        // Sunday 10:00
-        _setHolyDayFee(11, 900, 400, 1990, 990);
-        // Sunday 11:00
-        _setHolyDayFee(12, 900, 400, 1980, 980);
-        // Sunday 12:00
-        _setHolyDayFee(13, 900, 400, 1970, 970);
-        // Sunday 13:00
-        _setHolyDayFee(14, 900, 400, 1960, 960);
-        // Sunday 14:00
-        _setHolyDayFee(15, 900, 400, 1950, 950);
-        // Sunday 15:00
-        _setHolyDayFee(16, 900, 400, 1940, 940);
-        // Sunday 16:00
-        _setHolyDayFee(17, 900, 400, 1930, 930);
-        // Sunday 17:00
-        _setHolyDayFee(18, 900, 400, 1920, 920);
-        // Sunday 18:00
-        _setHolyDayFee(19, 900, 400, 1910, 910);
-        // Sunday 19:00
-        _setHolyDayFee(20, 900, 400, 1900, 900);
-        // Sunday 20:00
-        _setHolyDayFee(21, 900, 400, 1890, 890);
-        // Sunday 21:00
-        _setHolyDayFee(22, 900, 400, 1880, 880);
-        // Sunday 22:00
-        _setHolyDayFee(23, 900, 400, 1870, 870);
-        // Sunday 23:00
+        // Set initial transaction fee
+        _setFees(900, 400, 1800, 800);
 
         dividendTracker = new BOLASDividendTracker();
 
@@ -596,7 +538,7 @@ contract BOLAS is ERC20, Adminable {
             );
         }
 
-        (uint256 totalFees, uint256 liquidityFee) = _getCurrentFees(from, to);
+        (uint256 totalFees, uint256 liquidityFee) = _getFees(from, to);
 
         if (
             !swapping &&
@@ -787,7 +729,6 @@ contract BOLAS is ERC20, Adminable {
     }
 
     function _getFees(
-        uint256 timestamp,
         address from,
         address to
     ) internal view returns (uint256 totalFees, uint256 liquidityFee) {
@@ -795,37 +736,17 @@ contract BOLAS is ERC20, Adminable {
         bool isAMMBuy = automatedMarketMakerPairs[from];
 
         if (isAMMBuy || isAMMSell) {
-            // referenceTimeStamp = 868233600; // Date and time (GMT): Monday, July 7, 1997 0:00:00
-            require(
-                timestamp > referenceTimeStamp,
-                "Cannot view data before referenceTimeStamp"
-            );
-            uint256 absTimeDiffSec = timestamp.sub(referenceTimeStamp);
-            uint256 absTimeDiffHours = absTimeDiffSec.div(60).div(60);
-            uint256 absTimeDiffDays = absTimeDiffHours.div(24);
-            uint256 dayIndex = absTimeDiffDays % 7;
-
-            FeePair memory feePair;
-            if (dayIndex < 6) {
-                // it's an unholy day
-                feePair = unholyDayFee[dayIndex];
-            } else {
-                // it's the holy day
-                uint256 hourIndex = absTimeDiffHours % 24;
-                feePair = holyDayFee[hourIndex];
-            }
-
             if (isAMMBuy) {
+                // AMM Buy Fees
                 (totalFees, liquidityFee) = (
-                feePair.rewardBuyFee + feePair.liquidityBuyFee,
-                feePair.liquidityBuyFee
+                feeRates.rewardBuyFee + feeRates.liquidityBuyFee,
+                feeRates.liquidityBuyFee
                 );
-            }
-
-            if (isAMMSell) {
+            } else {
+                // AMM Sell Fees
                 (totalFees, liquidityFee) = (
-                feePair.rewardSellFee + feePair.liquiditySellFee,
-                feePair.liquiditySellFee
+                feeRates.rewardSellFee + feeRates.liquiditySellFee,
+                feeRates.liquiditySellFee
                 );
             }
         } else {
@@ -834,28 +755,35 @@ contract BOLAS is ERC20, Adminable {
         }
     }
 
-    function _getCurrentFees(address from, address to)
-    internal
-    view
-    returns (uint256 totalFees, uint256 liquidityFee)
-    {
-        (totalFees, liquidityFee) = _getFees(block.timestamp, from, to);
-    }
-
-    function getCurrentFees(address from, address to)
-    external
-    view
-    returns (uint256 totalFees, uint256 liquidityFee)
-    {
-        (totalFees, liquidityFee) = _getCurrentFees(from, to);
+    function _setFees(
+        uint16 rewardBuy,
+        uint16 liqBuy,
+        uint16 rewardSell,
+        uint16 liqSell
+    ) internal {
+        FeePair memory current;
+        current.rewardBuyFee = rewardBuy;
+        current.liquidityBuyFee = liqBuy;
+        current.rewardSellFee = rewardSell;
+        current.liquiditySellFee = liqSell;
+        feeRates = current;
+        emit SetFees(rewardBuy, liqBuy, rewardSell, liqSell);
     }
 
     function getFees(
-        uint256 timestamp,
         address from,
         address to
     ) external view returns (uint256 totalFees, uint256 liquidityFee) {
-        (totalFees, liquidityFee) = _getFees(timestamp, from, to);
+        (totalFees, liquidityFee) = _getFees(from, to);
+    }
+
+    function setFees(
+        uint16 rewardBuy,
+        uint16 liqBuy,
+        uint16 rewardSell,
+        uint16 liqSell
+    ) external onlyAdmin(2) {
+        _setFees(rewardBuy, liqBuy, rewardSell, liqSell);
     }
 
     function setStartingConditions(
