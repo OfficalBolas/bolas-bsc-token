@@ -66,8 +66,6 @@ contract BOLAS is ERC20, Adminable {
         uint16 liquiditySellFee;
     }
 
-    uint256 public referenceTimeStamp = 868233600; // Date and time (GMT): Monday, July 7, 1997 0:00:00
-
     FeePair public feeRates;
 
     event UpdateDividendTracker(
@@ -191,7 +189,7 @@ contract BOLAS is ERC20, Adminable {
     function updateUniswapV2Router(address newAddress) public onlyAdmin(1) {
         require(
             newAddress != address(uniswapV2Router),
-                "BOLAS: The router already has that address"
+            "BOLAS: The router already has that address"
         );
         emit UpdateUniswapV2Router(newAddress, address(uniswapV2Router));
         uniswapV2Router = IUniswapV2Router02(newAddress);
