@@ -41,7 +41,7 @@ contract BOLAS is ERC20, Adminable {
     // use by default 300,000 gas to process auto-claiming dividends
     uint256 public gasForProcessing = 3 * 10 ** 5; // 300 thousand
 
-    /*   Fixed Sale and Starting Conditions  */
+    /*   Starting Conditions  */
 
     bool public fixStartingConditions = false;
 
@@ -53,7 +53,7 @@ contract BOLAS is ERC20, Adminable {
     // exlcude from fees and max transaction amount
     mapping(address => bool) private _isExcludedFromFees;
 
-    // addresses that can make transfers before presale is over
+    // addresses that can make transfers before trading is enabled
     mapping(address => bool) private canTransferBeforeTradingIsEnabled;
 
     // store addresses that a automatic market maker pairs. Any transfer *to* these addresses
@@ -143,23 +143,18 @@ contract BOLAS is ERC20, Adminable {
 
         _setAutomatedMarketMakerPair(_uniswapV2Pair, true);
 
-        address _fixedSaleWallet = 0x4Fc4bFeDc5c82644514fACF716C7F888a0C73cCc;
-        fixedSaleWallet = _fixedSaleWallet;
-
         // exclude from receiving dividends
         dividendTracker.excludeFromDividends(address(dividendTracker));
         dividendTracker.excludeFromDividends(address(this));
         dividendTracker.excludeFromDividends(owner());
         dividendTracker.excludeFromDividends(address(_uniswapV2Router));
-        dividendTracker.excludeFromDividends(_fixedSaleWallet);
 
         // exclude from paying fees, having max transaction amount, or having max wallet size
         excludeFromFees(liquidityWallet, true);
         excludeFromFees(address(this), true);
 
-        // enable owner and fixed-sale wallet to send tokens before presales are over
+        // enable owner wallet to send tokens before trading is enabled
         canTransferBeforeTradingIsEnabled[owner()] = true;
-        canTransferBeforeTradingIsEnabled[_fixedSaleWallet] = true;
 
         /*
             _mint is an internal function in ERC20.sol that is only called here,
@@ -462,7 +457,7 @@ contract BOLAS is ERC20, Adminable {
             );
         }
 
-        bool takeFee = !isFixedSaleBuy && tradingIsEnabled && !swapping;
+        bool takeFee = tradingIsEnabled && !swapping;
 
         // if any account belongs to _isExcludedFromFee account then remove the fee
         if (_isExcludedFromFees[from] || _isExcludedFromFees[to]) {
