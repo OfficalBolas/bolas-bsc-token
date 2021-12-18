@@ -27,10 +27,8 @@ contract BOLAS is ERC20, Adminable {
     uint8 private _decimals = 18;
     uint256 private _decimals256 = 10 ** uint256(_decimals);
     uint256 private constant _oneHundred = 10 ** 2; // used for percentages
-    uint256 private constant _oneHour = 60 * 60; // one hour in seconds
-    uint256 private constant _oneDay = _oneHour * 24; // one day in seconds
 
-    uint256 private _totalSupply = 1 * 10 ** 9 * _decimals256; // 1 billion
+    uint256 private _totalSupply = 160 * 10 ** 12 * _decimals256; // 160 trillion
     uint256 public maxWalletAmount = (2 * _totalSupply) / _oneHundred; // Max Wallet: 2%
     uint256 public maxSellTransactionAmount = 1 * 10 ** 6 * _decimals256; // 1 million
     uint256 public swapTokensAtAmount = 2 * 10 ** 5 * _decimals256; // 200 thousand
