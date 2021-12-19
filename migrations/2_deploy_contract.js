@@ -1,5 +1,8 @@
 const BOLAS = artifacts.require("BOLAS");
+const IterableMapping = artifacts.require("IterableMapping");
 
-module.exports = function (deployer) {
-  deployer.deploy(BOLAS);
-};
+module.exports = async function (deployer) {
+    await deployer.deploy(IterableMapping)
+    await deployer.link(IterableMapping, BOLAS)
+    await deployer.deploy(BOLAS)
+}
