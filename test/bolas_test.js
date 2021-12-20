@@ -1,23 +1,25 @@
+let token;
 const BOLAS = artifacts.require('BOLAS')
 
 contract('BOLAS', (accounts) => {
+    beforeEach(async () => {
+        token = await BOLAS.deployed();
+    })
+
     it('creation: should create an initial balance of 10000 for the creator', async () => {
-        const token = await BOLAS.at('0xDBbEae6DAFFEDE334a8110e2db4EEB817Eb7DA70');
         const balance = await token.balanceOf(accounts[0])
         assert.strictEqual(balance.toString(), '160000000000000000000000000000000')
     })
-    /*
-        it('creation: test correct setting of vanity information', async () => {
-            const token = await BOLAS.deployed();
-            const name = await token.name()
-            assert.strictEqual(name, 'BOLAS')
+    it('creation: test correct setting of vanity information', async () => {
+        const name = await token.name()
+        assert.strictEqual(name, 'BOLAS')
 
-            const decimals = await token.decimals()
-            assert.strictEqual(decimals.toNumber(), 18)
+        const decimals = await token.decimals()
+        assert.strictEqual(decimals.toNumber(), 18)
 
-            const symbol = await token.symbol()
-            assert.strictEqual(symbol, 'BOLAS')
-        })*/
+        const symbol = await token.symbol()
+        assert.strictEqual(symbol, 'BOLAS')
+    })
     /*
         // TRANSERS
         // normal transfers without approvals
