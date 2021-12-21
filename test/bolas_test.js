@@ -161,64 +161,38 @@ contract('BOLAS', (accounts) => {
         }
         assert.equal(threw, true)
     })
+    it('approvals: approve max (2^256 - 1)', async () => {
+        await token.approve(accounts[2], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: accounts[1]})
+        const allowance = await token.allowance(accounts[1], accounts[2])
+        assert.strictEqual(allowance.toString(), '115792089237316195423570985008687907853269984665640564039457584007913129639935')
+    })
+    it('events: should fire Transfer event properly', async () => {
+        const res = await token.transfer(accounts[2], '2666', {from: accounts[1]})
+        const transferLog = res.logs.find(
+            element => element.event.match('Transfer') &&
+                element.address.match(token.address)
+        )
+        assert.strictEqual(transferLog.args.from, accounts[1])
+        // L2 ETH transfer also emits a transfer event
+        assert.strictEqual(transferLog.args.to, accounts[2])
+        assert.strictEqual(transferLog.args.value.toString(), '2666')
+    })
+    it('events: should fire Transfer event normally on a zero transfer', async () => {
+        const res = await token.transfer(accounts[2], '0', {from: accounts[1]})
+        const transferLog = res.logs.find(
+            element => element.event.match('Transfer') &&
+                element.address.match(token.address)
+        )
+        assert.strictEqual(transferLog.args.from, accounts[1])
+        assert.strictEqual(transferLog.args.to, accounts[2])
+        assert.strictEqual(transferLog.args.value.toString(), '0')
+    })
 
-    /*
-                 it('approvals: approve max (2^256 - 1)', async () => {
-                     await token.approve(accounts[1], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: accounts[0]})
-                     const allowance = await token.allowance(accounts[0], accounts[1])
-                     assert.strictEqual(allowance.toString(), '115792089237316195423570985008687907853269984665640564039457584007913129639935')
-                 })
-
-                 // should approve max of msg.sender & withdraw 20 without changing allowance (should succeed).
-                 it('approvals: msg.sender approves accounts[1] of max (2^256 - 1) & withdraws 20', async () => {
-                     const balance0 = await token.balanceOf(accounts[0])
-                     assert.strictEqual(balance0.toNumber(), 10000)
-
-                     const max = '115792089237316195423570985008687907853269984665640564039457584007913129639935'
-                     await token.approve(accounts[1], max, {from: accounts[0]})
-                     const balance2 = await token.balanceOf(accounts[2])
-                     assert.strictEqual(balance2.toNumber(), 0, 'balance2 not correct')
-
-                     await token.transferFrom(accounts[0], accounts[2], 20, {from: accounts[1]})
-                     const allowance01 = await token.allowance(accounts[0], accounts[1])
-                     assert.strictEqual(allowance01.toString(), max)
-
-                     const balance22 = await token.balanceOf(accounts[2])
-                     assert.strictEqual(balance22.toNumber(), 20)
-
-                     const balance02 = await token.balanceOf(accounts[0])
-                     assert.strictEqual(balance02.toNumber(), 9980)
-                 })
-
-                 /!* eslint-disable no-underscore-dangle *!/
-                 it('events: should fire Transfer event properly', async () => {
-                     const res = await token.transfer(accounts[1], '2666', {from: accounts[0]})
-                     const transferLog = res.logs.find(
-                         element => element.event.match('Transfer') &&
-                             element.address.match(token.address)
-                     )
-                     assert.strictEqual(transferLog.args._from, accounts[0])
-                     // L2 ETH transfer also emits a transfer event
-                     assert.strictEqual(transferLog.args._to, accounts[1])
-                     assert.strictEqual(transferLog.args._value.toString(), '2666')
-                 })
-
-                 it('events: should fire Transfer event normally on a zero transfer', async () => {
-                     const res = await token.transfer(accounts[1], '0', {from: accounts[0]})
-                     const transferLog = res.logs.find(
-                         element => element.event.match('Transfer') &&
-                             element.address.match(token.address)
-                     )
-                     assert.strictEqual(transferLog.args._from, accounts[0])
-                     assert.strictEqual(transferLog.args._to, accounts[1])
-                     assert.strictEqual(transferLog.args._value.toString(), '0')
-                 })
-
-                 it('events: should fire Approval event properly', async () => {
-                     const res = await token.approve(accounts[1], '2666', {from: accounts[0]})
-                     const approvalLog = res.logs.find(element => element.event.match('Approval'))
-                     assert.strictEqual(approvalLog.args._owner, accounts[0])
-                     assert.strictEqual(approvalLog.args._spender, accounts[1])
-                     assert.strictEqual(approvalLog.args._value.toString(), '2666')
-                 })*/
+    it('events: should fire Approval event properly', async () => {
+        const res = await token.approve(accounts[2], '2666', {from: accounts[1]})
+        const approvalLog = res.logs.find(element => element.event.match('Approval'))
+        assert.strictEqual(approvalLog.args.owner, accounts[1])
+        assert.strictEqual(approvalLog.args.spender, accounts[2])
+        assert.strictEqual(approvalLog.args.value.toString(), '2666')
+    })
 })
