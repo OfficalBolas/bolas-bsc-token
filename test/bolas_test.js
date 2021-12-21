@@ -112,34 +112,34 @@ contract('BOLAS', (accounts) => {
         assert.strictEqual(balance02.toNumber(), 9960)
     })
 
+    // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
+    it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', async () => {
+        await reinitializeTokenNoFees(accounts);
+        await token.approve(accounts[2], 100, {from: accounts[1]})
+        const allowance01 = await token.allowance(accounts[1], accounts[2])
+        assert.strictEqual(allowance01.toNumber(), 100)
+
+        await token.transferFrom(accounts[1], accounts[3], 50, {from: accounts[2]})
+        const allowance012 = await token.allowance(accounts[1], accounts[2])
+        assert.strictEqual(allowance012.toNumber(), 50)
+
+        const balance2 = await token.balanceOf(accounts[3])
+        assert.strictEqual(balance2.toNumber(), 50)
+
+        const balance0 = await token.balanceOf(accounts[1])
+        assert.strictEqual(balance0.toNumber(), 9950)
+
+        // FIRST tx done.
+        // onto next.
+        let threw = false
+        try {
+            await token.transferFrom(accounts[1], accounts[3], 60, {from: accounts[2]})
+        } catch (e) {
+            threw = true
+        }
+        assert.equal(threw, true)
+    })
     /*
-                 // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
-                 it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', async () => {
-                     await token.approve(accounts[1], 100, {from: accounts[0]})
-                     const allowance01 = await token.allowance(accounts[0], accounts[1])
-                     assert.strictEqual(allowance01.toNumber(), 100)
-
-                     await token.transferFrom(accounts[0], accounts[2], 50, {from: accounts[1]})
-                     const allowance012 = await token.allowance(accounts[0], accounts[1])
-                     assert.strictEqual(allowance012.toNumber(), 50)
-
-                     const balance2 = await token.balanceOf(accounts[2])
-                     assert.strictEqual(balance2.toNumber(), 50)
-
-                     const balance0 = await token.balanceOf(accounts[0])
-                     assert.strictEqual(balance0.toNumber(), 9950)
-
-                     // FIRST tx done.
-                     // onto next.
-                     let threw = false
-                     try {
-                         await token.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
-                     } catch (e) {
-                         threw = true
-                     }
-                     assert.equal(threw, true)
-                 })
-
                  it('approvals: attempt withdrawal from account with no allowance (should fail)', async () => {
                      let threw = false
                      try {
