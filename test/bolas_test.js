@@ -12,7 +12,7 @@ async function reinitializeTokenWithFees(accounts) {
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
 }
 
-contract('BOLAS', (accounts) => {
+contract('BOLAS GENERAL TEST', (accounts) => {
     before(async () => {
         await reinitializeTokenNoFees(accounts);
     })
