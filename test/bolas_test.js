@@ -139,30 +139,30 @@ contract('BOLAS', (accounts) => {
         }
         assert.equal(threw, true)
     })
+
+    it('approvals: attempt withdrawal from account with no allowance (should fail)', async () => {
+        let threw = false
+        try {
+            await token.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
+        } catch (e) {
+            threw = true
+        }
+        assert.equal(threw, true)
+    })
+    it('approvals: allow accounts[1] 100 to withdraw from accounts[0]. Withdraw 60 and then approve 0 & attempt transfer.', async () => {
+        await token.approve(accounts[2], 100, {from: accounts[1]})
+        await token.transferFrom(accounts[1], accounts[2], 60, {from: accounts[2]})
+        await token.approve(accounts[2], 0, {from: accounts[1]})
+        let threw = false
+        try {
+            await token.transferFrom(accounts[1], accounts[2], 10, {from: accounts[2]})
+        } catch (e) {
+            threw = true
+        }
+        assert.equal(threw, true)
+    })
+
     /*
-                 it('approvals: attempt withdrawal from account with no allowance (should fail)', async () => {
-                     let threw = false
-                     try {
-                         await token.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
-                     } catch (e) {
-                         threw = true
-                     }
-                     assert.equal(threw, true)
-                 })
-
-                 it('approvals: allow accounts[1] 100 to withdraw from accounts[0]. Withdraw 60 and then approve 0 & attempt transfer.', async () => {
-                     await token.approve(accounts[1], 100, {from: accounts[0]})
-                     await token.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
-                     await token.approve(accounts[1], 0, {from: accounts[0]})
-                     let threw = false
-                     try {
-                         await token.transferFrom(accounts[0], accounts[2], 10, {from: accounts[1]})
-                     } catch (e) {
-                         threw = true
-                     }
-                     assert.equal(threw, true)
-                 })
-
                  it('approvals: approve max (2^256 - 1)', async () => {
                      await token.approve(accounts[1], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: accounts[0]})
                      const allowance = await token.allowance(accounts[0], accounts[1])
