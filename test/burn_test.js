@@ -17,7 +17,7 @@ contract('BOLAS BURN TEST', (accounts) => {
         await reinitializeTokenNoFees(accounts);
     })
 
-    it('creation: should create an initial balance of 10000 for the creator', async () => {
+    it('should create an initial balance of 10000 for the creator', async () => {
         const balance = await token.balanceOf(accounts[1])
         assert.strictEqual(balance.toNumber(), 10000)
     })
