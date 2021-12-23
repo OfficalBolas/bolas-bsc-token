@@ -47,4 +47,19 @@ contract('BOLAS FEES TEST', (accounts) => {
         const balance = await token.balanceOf(accounts[2]);
         assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, config))
     })
+
+    it('transfers: balances match after transfer with fees', async () => {
+        await reinitializeTokenWithFees(accounts);
+        await token.excludeFromReward(accounts[2]);
+        await token.transfer(accounts[2], 10000, {from: accounts[1]});
+        const balance = await token.balanceOf(accounts[2]);
+        assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, config))
+    })
+
+    it('transfers: should transfer with no fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
+        await reinitializeTokenWithFees(accounts);
+        await token.transfer(accounts[2], 10000, {from: accounts[0]});
+        const balance = await token.balanceOf(accounts[2]);
+        assert.strictEqual(balance.toNumber(), 10000)
+    })
 })
