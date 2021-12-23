@@ -1,12 +1,14 @@
 lockfileVersion: 5.3
 
 specifiers:
+  '@openzeppelin/contracts': 3.4.1
   '@truffle/hdwallet-provider': ^2.0.0
   chai: ^4.3.4
   mocha: ^9.1.3
   truffle: ^5.4.25
 
 dependencies:
+  '@openzeppelin/contracts': 3.4.1
   '@truffle/hdwallet-provider': 2.0.0
   truffle: 5.4.25
 
@@ -1539,6 +1541,10 @@ packages:
       fastq: 1.13.0
     dev: false
     optional: true
+
+  /@openzeppelin/contracts/3.4.1:
+    resolution: { integrity: sha512-cUriqMauq1ylzP2TxePNdPqkwI7Le3Annh4K9rrpvKfSBB/bdW+Iu1ihBaTIABTAAJ85LmKL5SSPPL9ry8d1gQ== }
+    dev: false
 
   /@protobufjs/aspromise/1.1.2:
     resolution: { integrity: sha1-m4sMxmPWaafY9vXQiToU00jzD78= }

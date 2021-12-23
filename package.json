@@ -4,6 +4,7 @@
 		"mocha": "^9.1.3"
 	},
 	"dependencies": {
+		"@openzeppelin/contracts": "3.4.1",
 		"@truffle/hdwallet-provider": "^2.0.0",
 		"truffle": "^5.4.25"
 	}
