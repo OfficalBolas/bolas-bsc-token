@@ -10,6 +10,7 @@ import "./Address.sol";
 import "./IUniswapV2Router.sol";
 import "./IUniswapV2Pair.sol";
 import "./IUniswapV2Factory.sol";
+import "./CommonUtils.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract BOLAS is Context, IERC20, Ownable {
@@ -202,19 +203,6 @@ contract BOLAS is Context, IERC20, Ownable {
             }
         }
     }
-
-    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
-        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
-        _tOwned[sender] = _tOwned[sender].sub(tAmount);
-        _rOwned[sender] = _rOwned[sender].sub(rAmount);
-        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
-        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
-        _takeLiquidity(tLiquidity);
-        _reflectFee(rFee, tFee);
-        emit Transfer(sender, recipient, tTransferAmount);
-    }
-
-
 
     //to recieve ETH from uniswapV2Router when swaping
     receive() external payable {}
@@ -411,6 +399,12 @@ contract BOLAS is Context, IERC20, Ownable {
         uint256 burnAmt = amount.mul(_burnFee).div(100);
         uint256 charityAmt = amount.mul(_charityFee).div(100);
 
+        emit DebugLog(CommonUtils.concatStrings(
+                "Total amount:", Strings.toString(amount),
+                " Burn amount:", Strings.toString(burnAmt),
+                " Charity amount:", Strings.toString(charityAmt)
+            ));
+
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
             _transferFromExcluded(sender, recipient, (amount.sub(burnAmt).sub(charityAmt)));
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
@@ -440,8 +434,18 @@ contract BOLAS is Context, IERC20, Ownable {
             restoreAllFee();
     }
 
+    function logValues(uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) private {
+        emit DebugLog(CommonUtils.concatStrings(
+                "(T)TransferAmount", Strings.toString(tTransferAmount),
+                " (T)Fee", Strings.toString(tFee),
+                " (T)Liquidity", Strings.toString(tLiquidity)
+            ));
+    }
+
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
+        emit DebugLog("Transfer Type: Standard");
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+        logValues(tTransferAmount, tFee, tLiquidity);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
@@ -450,7 +454,9 @@ contract BOLAS is Context, IERC20, Ownable {
     }
 
     function _transferToExcluded(address sender, address recipient, uint256 tAmount) private {
+        emit DebugLog("Transfer Type: ToExcluded");
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+        logValues(tTransferAmount, tFee, tLiquidity);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
@@ -460,9 +466,24 @@ contract BOLAS is Context, IERC20, Ownable {
     }
 
     function _transferFromExcluded(address sender, address recipient, uint256 tAmount) private {
+        emit DebugLog("Transfer Type: FromExcluded");
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+        logValues(tTransferAmount, tFee, tLiquidity);
         _tOwned[sender] = _tOwned[sender].sub(tAmount);
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
+        _takeLiquidity(tLiquidity);
+        _reflectFee(rFee, tFee);
+        emit Transfer(sender, recipient, tTransferAmount);
+    }
+
+    function _transferBothExcluded(address sender, address recipient, uint256 tAmount) private {
+        emit DebugLog("Transfer Type: BothExcluded");
+        (uint256 rAmount, uint256 rTransferAmount, uint256 rFee, uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getValues(tAmount);
+        logValues(tTransferAmount, tFee, tLiquidity);
+        _tOwned[sender] = _tOwned[sender].sub(tAmount);
+        _rOwned[sender] = _rOwned[sender].sub(rAmount);
+        _tOwned[recipient] = _tOwned[recipient].add(tTransferAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeLiquidity(tLiquidity);
         _reflectFee(rFee, tFee);
