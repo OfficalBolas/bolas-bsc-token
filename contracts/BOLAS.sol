@@ -54,6 +54,8 @@ contract BOLAS is Context, IERC20, Ownable {
 
     uint256 private numTokensSellToAddToLiquidity = 8000 * 10 ** 18;
 
+    event ExcludeFromFees(address indexed account, bool isExcluded);
+    event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event SwapAndLiquify(
@@ -465,12 +467,28 @@ contract BOLAS is Context, IERC20, Ownable {
         emit Transfer(sender, recipient, tTransferAmount);
     }
 
-    function excludeFromFee(address account) public onlyOwner {
-        _isExcludedFromFee[account] = true;
+    function excludeFromFees(address account, bool excluded)
+    public
+    onlyOwner
+    {
+        require(
+            _isExcludedFromFee[account] != excluded,
+            "BOLAS: Account is already the value of 'excluded'"
+        );
+        _isExcludedFromFee[account] = excluded;
+
+        emit ExcludeFromFees(account, excluded);
     }
 
-    function includeInFee(address account) public onlyOwner {
-        _isExcludedFromFee[account] = false;
+    function excludeMultipleAccountsFromFees(
+        address[] calldata accounts,
+        bool excluded
+    ) public onlyOwner {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _isExcludedFromFee[accounts[i]] = excluded;
+        }
+
+        emit ExcludeMultipleAccountsFromFees(accounts, excluded);
     }
 
     function setcharityWallet(address newWallet) external onlyOwner() {

@@ -1,5 +1,6 @@
 let token;
-const BOLAS = artifacts.require('BOLAS')
+const BOLAS = artifacts.require('BOLAS');
+const testUtils = require('./test_utils');
 
 async function reinitializeTokenNoFees(accounts) {
     token = await BOLAS.new();
@@ -32,7 +33,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         assert.strictEqual(symbol, 'BOLAS')
     })
 
-    // TRANSERS
+    // TRANSFERS
     it('transfers: should transfer 10000 to accounts[2] with accounts[1] having 10000', async () => {
         await token.transfer(accounts[2], 10000, {from: accounts[1]})
         const balance = await token.balanceOf(accounts[2])
@@ -40,17 +41,15 @@ contract('BOLAS GENERAL TEST', (accounts) => {
     })
 
     it('transfers: should fail when trying to transfer 10001 to accounts[2] with accounts[1] having 10000', async () => {
-        let threw = false
-        try {
-            await token.transfer(accounts[3], '10001', {from: accounts[2]})
-        } catch (e) {
-            threw = true
-        }
-        assert.equal(threw, true)
+        await testUtils.assertFailure(
+            () => token.transfer(accounts[3], '10001', {from: accounts[2]})
+        );
     })
 
-    it('transfers: should handle zero-transfers normally', async () => {
-        assert(await token.transfer(accounts[2], 0, {from: accounts[1]}), 'zero-transfer has failed')
+    it('transfers: should revert zero-transfers', async () => {
+        await testUtils.assertFailure(
+            () => token.transfer(accounts[2], 0, {from: accounts[1]})
+        );
     })
 
     // NOTE: testing uint256 wrapping is impossible since you can't supply > 2^256 -1
@@ -131,41 +130,31 @@ contract('BOLAS GENERAL TEST', (accounts) => {
 
         // FIRST tx done.
         // onto next.
-        let threw = false
-        try {
-            await token.transferFrom(accounts[1], accounts[3], 60, {from: accounts[2]})
-        } catch (e) {
-            threw = true
-        }
-        assert.equal(threw, true)
+        await testUtils.assertFailure(
+            () => token.transferFrom(accounts[1], accounts[3], 60, {from: accounts[2]})
+        );
     })
 
     it('approvals: attempt withdrawal from account with no allowance (should fail)', async () => {
-        let threw = false
-        try {
-            await token.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
-        } catch (e) {
-            threw = true
-        }
-        assert.equal(threw, true)
+        await testUtils.assertFailure(
+            () => token.transferFrom(accounts[0], accounts[2], 60, {from: accounts[1]})
+        );
     })
     it('approvals: allow accounts[1] 100 to withdraw from accounts[0]. Withdraw 60 and then approve 0 & attempt transfer.', async () => {
         await token.approve(accounts[2], 100, {from: accounts[1]})
         await token.transferFrom(accounts[1], accounts[2], 60, {from: accounts[2]})
         await token.approve(accounts[2], 0, {from: accounts[1]})
-        let threw = false
-        try {
-            await token.transferFrom(accounts[1], accounts[2], 10, {from: accounts[2]})
-        } catch (e) {
-            threw = true
-        }
-        assert.equal(threw, true)
+        await testUtils.assertFailure(
+            () => token.transferFrom(accounts[1], accounts[2], 10, {from: accounts[2]})
+        );
     })
     it('approvals: approve max (2^256 - 1)', async () => {
         await token.approve(accounts[2], '115792089237316195423570985008687907853269984665640564039457584007913129639935', {from: accounts[1]})
         const allowance = await token.allowance(accounts[1], accounts[2])
         assert.strictEqual(allowance.toString(), '115792089237316195423570985008687907853269984665640564039457584007913129639935')
     })
+
+    // EVENTS
     it('events: should fire Transfer event properly', async () => {
         const res = await token.transfer(accounts[2], '2666', {from: accounts[1]})
         const transferLog = res.logs.find(
@@ -176,16 +165,6 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         // L2 ETH transfer also emits a transfer event
         assert.strictEqual(transferLog.args.to, accounts[2])
         assert.strictEqual(transferLog.args.value.toString(), '2666')
-    })
-    it('events: should fire Transfer event normally on a zero transfer', async () => {
-        const res = await token.transfer(accounts[2], '0', {from: accounts[1]})
-        const transferLog = res.logs.find(
-            element => element.event.match('Transfer') &&
-                element.address.match(token.address)
-        )
-        assert.strictEqual(transferLog.args.from, accounts[1])
-        assert.strictEqual(transferLog.args.to, accounts[2])
-        assert.strictEqual(transferLog.args.value.toString(), '0')
     })
 
     it('events: should fire Approval event properly', async () => {
