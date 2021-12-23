@@ -1,6 +1,6 @@
-let token;
 const BOLAS = artifacts.require('BOLAS');
 const testUtils = require('./test_utils');
+let token;
 
 async function reinitializeTokenNoFees(accounts) {
     token = await BOLAS.new(
