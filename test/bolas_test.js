@@ -1,5 +1,5 @@
 const BOLAS = artifacts.require('BOLAS');
-const testUtils = require('./test_utils');
+const testUtils = require('./utils/test_utils');
 let token;
 
 async function reinitializeTokenNoFees(accounts) {

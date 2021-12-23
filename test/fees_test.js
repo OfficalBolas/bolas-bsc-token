@@ -1,6 +1,6 @@
 const BOLAS = artifacts.require('BOLAS')
-const testUtils = require('./test_utils');
-const testHelpers = require('./test_helpers');
+const testUtils = require('./utils/test_utils');
+const testHelpers = require('./utils/test_helpers');
 let token;
 
 const config = {
