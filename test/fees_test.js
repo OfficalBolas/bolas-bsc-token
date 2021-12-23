@@ -1,6 +1,14 @@
 const BOLAS = artifacts.require('BOLAS')
 const testUtils = require('./test_utils');
+const testHelpers = require('./test_helpers');
 let token;
+
+const config = {
+    taxFee: 3,
+    liquidityFee: 3,
+    burnFee: 3,
+    charityFee: 5,
+}
 
 async function reinitializeTokenNoFees(accounts) {
     token = await BOLAS.new(
@@ -34,9 +42,9 @@ contract('BOLAS FEES TEST', (accounts) => {
     })
 
     // TRANSFER
-    it('transfers: should transfer 10000 to accounts[2] with accounts[1] having 10000', async () => {
-        await token.transfer(accounts[2], 10000, {from: accounts[1]})
-        const balance = await token.balanceOf(accounts[2])
-        assert.strictEqual(balance.toString(), '10000')
+    it('transfers: should transfer with fees 10000 to accounts[2] with accounts[1] having 10000', async () => {
+        await token.transfer(accounts[2], 10000, {from: accounts[1]});
+        const balance = await token.balanceOf(accounts[2]);
+        assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, config))
     })
 })
