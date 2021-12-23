@@ -10,6 +10,7 @@ import "./Address.sol";
 import "./IUniswapV2Router.sol";
 import "./IUniswapV2Pair.sol";
 import "./IUniswapV2Factory.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 
 contract BOLAS is Context, IERC20, Ownable {
     using SafeMath for uint256;
@@ -54,6 +55,7 @@ contract BOLAS is Context, IERC20, Ownable {
 
     uint256 private numTokensSellToAddToLiquidity = 8000 * 10 ** 18;
 
+    event DebugLog(string message);
     event ExcludeFromFees(address indexed account, bool isExcluded);
     event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
