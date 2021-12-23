@@ -1,6 +1,7 @@
 const BOLAS = artifacts.require('BOLAS')
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
+const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
 let token;
@@ -23,10 +24,29 @@ contract('BOLAS SWAP TEST', (accounts) => {
     });
 
     it('Uniswap router is approved for the maximum amount', async () => {
-        const router = await token.uniswapV2Router();
+        const routerAddress = await token.uniswapV2Router();
         const totalSupply = await token.totalSupply();
-        await token.approve(router, totalSupply, {from: accounts[0]});
-        const allowance = await token.allowance(accounts[0], router);
+        await token.approve(routerAddress, totalSupply, {from: accounts[1]});
+        const pair = await IUniswapV2Pair.at(await token.uniswapV2Pair());
+        await pair.approve(routerAddress, totalSupply, {from: accounts[1]});
+        const allowance = await token.allowance(accounts[1], routerAddress);
         assert.strictEqual(allowance.toString(), totalSupply.toString());
+    });
+
+    it('Add liquidity to Uniswap router', async () => {
+        const prevTokenBalance = await token.balanceOf(accounts[1])
+        const prevETHBalance = await testUtils.getEthBalance(accounts[1])
+        const routerAddress = await token.uniswapV2Router();
+        const router = await IUniswapV2Router02.at(routerAddress);
+        await router.addLiquidityETH(
+            token.address, 5000, 0, 0, accounts[1], new Date().getTime() + 3600000,
+            {from: accounts[1], value: testUtils.toWei('2')});
+        const newTokenBalance = await token.balanceOf(accounts[1]);
+        const newETHBalance = await testUtils.getEthBalance(accounts[1])
+        assert.strictEqual(prevTokenBalance.toNumber(), 5000 + newTokenBalance.toNumber());
+        assert.strictEqual(
+            parseInt(testUtils.fromWei(prevETHBalance)),
+            2 + parseInt(testUtils.fromWei(newETHBalance)),
+        );
     });
 })
