@@ -5,10 +5,28 @@ const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
 let token;
 
+async function reinitializeTokenWithFees(accounts) {
+    token = await BOLAS.new(
+        accounts[9], // charity
+    );
+    await token.transfer(accounts[1], 10000, {from: accounts[0]})
+}
+
 contract('BOLAS SWAP TEST', (accounts) => {
-    it('Uniswap exists', async () => {
-        const uniswapRouter = await IUniswapV2Router02.at('0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
-        const factory = await IUniswapV2Factory.at(await uniswapRouter.factory());
-        assert.strictEqual(factory.address, '0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f');
-    })
+    before(async () => {
+        await reinitializeTokenWithFees(accounts);
+    });
+
+    it('Uniswap router exists', async () => {
+        const router = await token.uniswapV2Router();
+        assert.strictEqual(router, '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D');
+    });
+
+    it('Uniswap router is approved for the maximum amount', async () => {
+        const router = await token.uniswapV2Router();
+        const totalSupply = await token.totalSupply();
+        await token.approve(router, totalSupply, {from: accounts[0]});
+        const allowance = await token.allowance(accounts[0], router);
+        assert.strictEqual(allowance.toString(), totalSupply.toString());
+    });
 })
