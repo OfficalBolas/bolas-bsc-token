@@ -3,13 +3,17 @@ const BOLAS = artifacts.require('BOLAS');
 const testUtils = require('./test_utils');
 
 async function reinitializeTokenNoFees(accounts) {
-    token = await BOLAS.new();
+    token = await BOLAS.new(
+        accounts[9], // charity
+    );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
     await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
 }
 
 async function reinitializeTokenWithFees(accounts) {
-    token = await BOLAS.new();
+    token = await BOLAS.new(
+        accounts[9], // charity
+    );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
 }
 
@@ -18,6 +22,12 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         await reinitializeTokenNoFees(accounts);
     })
 
+
+    // META DATA
+    it('creation: charity wallet should be set & correct', async () => {
+        const charityWallet = await token.charityWallet()
+        assert.strictEqual(charityWallet, accounts[9])
+    });
     it('creation: should create an initial balance of 10000 for the creator', async () => {
         const balance = await token.balanceOf(accounts[1])
         assert.strictEqual(balance.toNumber(), 10000)

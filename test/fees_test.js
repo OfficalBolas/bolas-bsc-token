@@ -2,17 +2,21 @@ let token;
 const BOLAS = artifacts.require('BOLAS')
 
 async function reinitializeTokenNoFees(accounts) {
-    token = await BOLAS.new();
+    token = await BOLAS.new(
+        accounts[9], // charity
+    );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
     await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
 }
 
 async function reinitializeTokenWithFees(accounts) {
-    token = await BOLAS.new();
+    token = await BOLAS.new(
+        accounts[9], // charity
+    );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
 }
 
-contract('BOLAS BURN TEST', (accounts) => {
+contract('BOLAS FEES TEST', (accounts) => {
     before(async () => {
         await reinitializeTokenNoFees(accounts);
     })
