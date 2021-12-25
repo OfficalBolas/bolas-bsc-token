@@ -23,11 +23,11 @@ async function getTokenToETHPath(token, router) {
 }
 
 function toWei(ethAmount) {
-    return web3.utils.toWei(ethAmount);
+    return web3.utils.toWei(ethAmount.toString());
 }
 
 function fromWei(weiAmount) {
-    return web3.utils.fromWei(weiAmount);
+    return web3.utils.fromWei(weiAmount.toString());
 }
 
 function getEthBalance(accountAddress) {
