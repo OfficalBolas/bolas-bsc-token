@@ -514,7 +514,7 @@ contract BOLAS is Context, IERC20, Ownable {
         emit ExcludeMultipleAccountsFromFees(accounts, excluded);
     }
 
-    function setmarketingWallet(address newWallet) external onlyOwner() {
+    function setMarketingWallet(address newWallet) external onlyOwner() {
         marketingWallet = newWallet;
     }
 
@@ -526,7 +526,7 @@ contract BOLAS is Context, IERC20, Ownable {
         _liquidityFee = liquidityFee;
     }
 
-    function setChartityFeePercent(uint256 marketingFee) external onlyOwner() {
+    function setMarketingFeePercent(uint256 marketingFee) external onlyOwner() {
         _marketingFee = marketingFee;
     }
 
