@@ -8,6 +8,20 @@ async function assertFailure(executor) {
     assert.equal(threw, true);
 }
 
+async function getETHToTokenPath(token, router) {
+    return [
+        await router.WETH(),
+        token.address,
+    ];
+}
+
+async function getTokenToETHPath(token, router) {
+    return [
+        await router.WETH(),
+        token.address,
+    ];
+}
+
 function toWei(ethAmount) {
     return web3.utils.toWei(ethAmount);
 }
@@ -25,4 +39,6 @@ module.exports = {
     toWei,
     fromWei,
     getEthBalance,
+    getETHToTokenPath,
+    getTokenToETHPath,
 }

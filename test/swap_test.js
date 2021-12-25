@@ -45,8 +45,25 @@ contract('BOLAS SWAP TEST', (accounts) => {
         const newETHBalance = await testUtils.getEthBalance(accounts[1])
         assert.strictEqual(prevTokenBalance.toNumber(), 5000 + newTokenBalance.toNumber());
         assert.strictEqual(
-            parseInt(testUtils.fromWei(prevETHBalance)),
-            2 + parseInt(testUtils.fromWei(newETHBalance)),
+            parseFloat(testUtils.fromWei(prevETHBalance)),
+            2 + parseFloat(testUtils.fromWei(newETHBalance)),
+        );
+    });
+
+    it('Buy tokens from uniswap', async () => {
+        const prevTokenBalance = await token.balanceOf(accounts[1])
+        const prevETHBalance = await testUtils.getEthBalance(accounts[1])
+        const routerAddress = await token.uniswapV2Router();
+        const router = await IUniswapV2Router02.at(routerAddress);
+        await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+            0, await testUtils.getETHToTokenPath(token, router), accounts[1], new Date().getTime() + 3600000,
+            {from: accounts[1], value: testUtils.toWei('1')});
+        const newTokenBalance = await token.balanceOf(accounts[1]);
+        const newETHBalance = await testUtils.getEthBalance(accounts[1])
+        assert.strictEqual(6246, newTokenBalance.toNumber());
+        assert.strictEqual(
+            parseFloat(testUtils.fromWei(prevETHBalance)),
+            1 + parseFloat(testUtils.fromWei(newETHBalance)),
         );
     });
 })
