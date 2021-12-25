@@ -14,8 +14,10 @@ async function reinitializeTokenWithFees(accounts) {
 }
 
 contract('BOLAS SWAP TEST', (accounts) => {
-    const minSlippage = 13;
-    const maxSlippage = 15;
+    const minBuySlippage = 13;
+    const maxBuySlippage = 15;
+    const minSellSlippage = 13;
+    const maxSellSlippage = 19;
     before(async () => {
         await reinitializeTokenWithFees(accounts);
     });
@@ -82,7 +84,7 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`SWAPPING SLIPPAGE: ${slippage}%`);
         console.log(`SWAPPING FEE: ETH ${ethBalanceDiff + SWAP_ETH_AMOUNT}`);
         assert(ethBalanceDiff < -SWAP_ETH_AMOUNT);
-        assert(slippage > minSlippage && slippage < maxSlippage);
+        assert(slippage > minBuySlippage && slippage < maxBuySlippage);
     });
     it('Sell tokens from uniswap', async () => {
         const SWAP_TOKEN_AMOUNT = 1855010;
@@ -104,6 +106,6 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`SWAPPING BALANCE CHANGE: BOLAS ${tokenBalanceDiff}`);
         console.log(`SWAPPING BALANCE CHANGE: ETH ${ethBalanceDiff}`);
         console.log(`SWAPPING SLIPPAGE: ${slippage}%`);
-        assert(slippage > minSlippage && slippage < maxSlippage);
+        assert(slippage > minSellSlippage && slippage < maxSellSlippage);
     });
 })

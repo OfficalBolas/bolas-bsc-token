@@ -11,7 +11,7 @@ module.exports = {
         },
         local: {
             // use the ganache command
-            // ganache-cli -f https://eth-mainnet.alchemyapi.io/v2/HDnpOSOi0m3ibwX1Lh1AtbSyggjFC1jW -l 80000000 --networkId 999
+            // ganache-cli -f https://eth-mainnet.alchemyapi.io/v2/HDnpOSOi0m3ibwX1Lh1AtbSyggjFC1jW -l 80000000 --networkId 999 --defaultBalanceEther 10000
             host: "127.0.0.1",
             port: 8545,
             network_id: 999,
