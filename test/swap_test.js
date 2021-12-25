@@ -50,9 +50,17 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`LIQUIDITY ADDING FEE: ETH ${ethBalanceDiff + LIQUIDITY_ETH_AMOUNT}`);
         assert(ethBalanceDiff < -LIQUIDITY_ETH_AMOUNT);
     });
-
+    it('Get uniswap reserves', async () => {
+        const reserves = await testHelpers.getTokenReserves(token);
+        const priceInETH = await testHelpers.getPriceOfTokenInETH(token);
+        console.log(`ETH vs BOLAS reserves: ${reserves[0]} vs ${reserves[1]}`);
+        console.log(`Price in ETH ${priceInETH}`);
+        assert.ok(priceInETH);
+    });
     it('Buy tokens from uniswap', async () => {
         const SWAP_ETH_AMOUNT = 1;
+        const priceInETH = await testHelpers.getPriceOfTokenInETH(token);
+        const estTokenOutput = (SWAP_ETH_AMOUNT / priceInETH) * (86 / 100.0);
         const prevTokenBalance = await token.balanceOf(accounts[1])
         const prevETHBalance = await testUtils.getEthBalance(accounts[1])
         const routerAddress = await token.uniswapV2Router();
@@ -64,6 +72,7 @@ contract('BOLAS SWAP TEST', (accounts) => {
         const newETHBalance = await testUtils.getEthBalance(accounts[1])
         const ethBalanceDiff = parseFloat(testUtils.fromWei(newETHBalance)) - parseFloat(testUtils.fromWei(prevETHBalance));
         const tokenBalanceDiff = newTokenBalance.toNumber() - prevTokenBalance.toNumber();
+        console.log(`ESTIMATED OUTPUT: BOLAS ${estTokenOutput}`);
         console.log(`SWAPPING BALANCE CHANGE: BOLAS ${tokenBalanceDiff}`);
         console.log(`SWAPPING BALANCE CHANGE: ETH ${ethBalanceDiff}`);
         console.log(`SWAPPING FEE: ETH ${ethBalanceDiff + SWAP_ETH_AMOUNT}`);
