@@ -38,15 +38,15 @@ contract BOLAS is Context, IERC20, Ownable {
     uint256 public _taxFee = 3;
     uint256 private _previousTaxFee = _taxFee;
 
-    uint256 public _liquidityFee = 3;
+    uint256 public _liquidityFee = 1;
     uint256 private _previousLiquidityFee = _liquidityFee;
 
-    uint256 public _burnFee = 3;
+    uint256 public _burnFee = 6;
     uint256 private _previousBurnFee = _burnFee;
 
-    uint256 public _charityFee = 5;
-    address public charityWallet = 0x4eF9A651F8656DEf8454178406eEae16FB7Ca458;
-    uint256 private _previouscharityFee = _charityFee;
+    uint256 public _marketingFee = 1;
+    address public marketingWallet;
+    uint256 private _previousMarketingFee = _marketingFee;
 
     IUniswapV2Router02 public  uniswapV2Router;
     address public  uniswapV2Pair;
@@ -73,9 +73,9 @@ contract BOLAS is Context, IERC20, Ownable {
         inSwapAndLiquify = false;
     }
 
-    constructor (address _charityWallet) public {
+    constructor (address _marketingWallet) public {
         _rOwned[_msgSender()] = _rTotal;
-        charityWallet = _charityWallet;
+        marketingWallet = _marketingWallet;
         // Binance test network swap router
         // IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0xD99D1c33F9fC3444f8101754aBC46c52416550D1);
         // Binance main network swap router
@@ -271,16 +271,16 @@ contract BOLAS is Context, IERC20, Ownable {
     }
 
     function removeAllFee() private {
-        if (_taxFee == 0 && _liquidityFee == 0 && _charityFee == 0 && _burnFee == 0) return;
+        if (_taxFee == 0 && _liquidityFee == 0 && _marketingFee == 0 && _burnFee == 0) return;
 
         _previousTaxFee = _taxFee;
         _previousLiquidityFee = _liquidityFee;
         _previousBurnFee = _burnFee;
-        _previouscharityFee = _charityFee;
+        _previousMarketingFee = _marketingFee;
 
         _taxFee = 0;
         _liquidityFee = 0;
-        _charityFee = 0;
+        _marketingFee = 0;
         _burnFee = 0;
     }
 
@@ -288,7 +288,7 @@ contract BOLAS is Context, IERC20, Ownable {
         _taxFee = _previousTaxFee;
         _liquidityFee = _previousLiquidityFee;
         _burnFee = _previousBurnFee;
-        _charityFee = _previouscharityFee;
+        _marketingFee = _previousMarketingFee;
     }
 
     function isExcludedFromFee(address account) public view returns (bool) {
@@ -395,35 +395,35 @@ contract BOLAS is Context, IERC20, Ownable {
             removeAllFee();
         }
 
-        //Calculate burn amount and charity amount
+        //Calculate burn amount and marketing amount
         uint256 burnAmt = amount.mul(_burnFee).div(100);
-        uint256 charityAmt = amount.mul(_charityFee).div(100);
+        uint256 marketingAmt = amount.mul(_marketingFee).div(100);
 
         emit DebugLog(CommonUtils.concatStrings(
                 "Total amount:", Strings.toString(amount),
                 " Burn amount:", Strings.toString(burnAmt),
-                " Charity amount:", Strings.toString(charityAmt)
+                " Marketing amount:", Strings.toString(marketingAmt)
             ));
 
         if (_isExcluded[sender] && !_isExcluded[recipient]) {
-            _transferFromExcluded(sender, recipient, (amount.sub(burnAmt).sub(charityAmt)));
+            _transferFromExcluded(sender, recipient, (amount.sub(burnAmt).sub(marketingAmt)));
         } else if (!_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferToExcluded(sender, recipient, (amount.sub(burnAmt).sub(charityAmt)));
+            _transferToExcluded(sender, recipient, (amount.sub(burnAmt).sub(marketingAmt)));
         } else if (!_isExcluded[sender] && !_isExcluded[recipient]) {
-            _transferStandard(sender, recipient, (amount.sub(burnAmt).sub(charityAmt)));
+            _transferStandard(sender, recipient, (amount.sub(burnAmt).sub(marketingAmt)));
         } else if (_isExcluded[sender] && _isExcluded[recipient]) {
-            _transferBothExcluded(sender, recipient, (amount.sub(burnAmt).sub(charityAmt)));
+            _transferBothExcluded(sender, recipient, (amount.sub(burnAmt).sub(marketingAmt)));
         } else {
-            _transferStandard(sender, recipient, (amount.sub(burnAmt).sub(charityAmt)));
+            _transferStandard(sender, recipient, (amount.sub(burnAmt).sub(marketingAmt)));
         }
 
-        //Temporarily remove fees to transfer to burn address and charity wallet
+        //Temporarily remove fees to transfer to burn address and marketing wallet
         _taxFee = 0;
         _liquidityFee = 0;
 
 
         _transferStandard(sender, address(0), burnAmt);
-        _transferStandard(sender, charityWallet, charityAmt);
+        _transferStandard(sender, marketingWallet, marketingAmt);
 
         //Restore tax and liquidity fees
         _taxFee = _previousTaxFee;
@@ -514,8 +514,8 @@ contract BOLAS is Context, IERC20, Ownable {
         emit ExcludeMultipleAccountsFromFees(accounts, excluded);
     }
 
-    function setcharityWallet(address newWallet) external onlyOwner() {
-        charityWallet = newWallet;
+    function setmarketingWallet(address newWallet) external onlyOwner() {
+        marketingWallet = newWallet;
     }
 
     function setTaxFeePercent(uint256 taxFee) external onlyOwner() {
@@ -526,8 +526,8 @@ contract BOLAS is Context, IERC20, Ownable {
         _liquidityFee = liquidityFee;
     }
 
-    function setChartityFeePercent(uint256 charityFee) external onlyOwner() {
-        _charityFee = charityFee;
+    function setChartityFeePercent(uint256 marketingFee) external onlyOwner() {
+        _marketingFee = marketingFee;
     }
 
     function setBurnFeePercent(uint256 burnFee) external onlyOwner() {

@@ -8,16 +8,16 @@ let token;
 
 async function reinitializeTokenWithFees(accounts) {
     token = await BOLAS.new(
-        accounts[9], // charity
+        accounts[9], // marketing
     );
     await token.transfer(accounts[1], 100000000, {from: accounts[0]})
 }
 
 contract('BOLAS SWAP TEST', (accounts) => {
-    const minBuySlippage = 13;
-    const maxBuySlippage = 15;
-    const minSellSlippage = 13;
-    const maxSellSlippage = 19;
+    const minBuySlippage = 10;
+    const maxBuySlippage = 12;
+    const minSellSlippage = 10;
+    const maxSellSlippage = 15;
     before(async () => {
         await reinitializeTokenWithFees(accounts);
     });
@@ -87,7 +87,7 @@ contract('BOLAS SWAP TEST', (accounts) => {
         assert(slippage > minBuySlippage && slippage < maxBuySlippage);
     });
     it('Sell tokens from uniswap', async () => {
-        const SWAP_TOKEN_AMOUNT = 1855010;
+        const SWAP_TOKEN_AMOUNT = 1055010;
         const priceInETH = await testHelpers.getPriceOfTokenInETH(token);
         const estETHOutput = SWAP_TOKEN_AMOUNT * priceInETH;
         const prevTokenBalance = await token.balanceOf(accounts[1])

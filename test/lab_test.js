@@ -5,12 +5,12 @@ let token;
 
 async function reinitializeTokenWithFees(accounts) {
     token = await BOLAS.new(
-        accounts[9], // charity
+        accounts[9], // marketing
     );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
 }
 
-contract('BOLAS SWAP TEST', (accounts) => {
+contract('BOLAS LAB TEST', (accounts) => {
     before(async () => {
         await reinitializeTokenWithFees(accounts);
     });

@@ -5,14 +5,14 @@ let token;
 
 const config = {
     taxFee: 3,
-    liquidityFee: 3,
-    burnFee: 3,
-    charityFee: 5,
+    liquidityFee: 1,
+    burnFee: 6,
+    marketingFee: 1,
 }
 
 async function reinitializeTokenNoFees(accounts) {
     token = await BOLAS.new(
-        accounts[9], // charity
+        accounts[9], // marketing
     );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
     await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
@@ -20,7 +20,7 @@ async function reinitializeTokenNoFees(accounts) {
 
 async function reinitializeTokenWithFees(accounts) {
     token = await BOLAS.new(
-        accounts[9], // charity
+        accounts[9], // marketing
     );
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
 }

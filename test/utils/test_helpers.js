@@ -8,8 +8,8 @@ function getTransferAmount(amount, config) {
     const liquidityAmount = amount * config.liquidityFee / 100;
     const intermediateAmount = amount - (taxAmount + liquidityAmount);
     const burnAmount = intermediateAmount * config.burnFee / 100;
-    const charityAmount = intermediateAmount * config.charityFee / 100;
-    return intermediateAmount - (burnAmount + charityAmount);
+    const marketingAmount = intermediateAmount * config.marketingFee / 100;
+    return intermediateAmount - (burnAmount + marketingAmount);
 }
 
 async function getTokenPairOfUniswapFactory(token) {
