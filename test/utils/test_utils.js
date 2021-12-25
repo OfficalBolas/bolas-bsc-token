@@ -34,6 +34,14 @@ function getEthBalance(accountAddress) {
     return web3.eth.getBalance(accountAddress);
 }
 
+function getMinimumAmountWithSlippage(amount, slippagePercent) {
+    return amount - (amount * slippagePercent) / 100.0;
+}
+
+function getMaximumAmountWithSlippage(amount, slippagePercent) {
+    return amount + (amount * slippagePercent) / 100.0;
+}
+
 module.exports = {
     assertFailure,
     toWei,
@@ -41,4 +49,6 @@ module.exports = {
     getEthBalance,
     getETHToTokenPath,
     getTokenToETHPath,
+    getMinimumAmountWithSlippage,
+    getMaximumAmountWithSlippage,
 }
