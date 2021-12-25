@@ -1,14 +1,8 @@
 const BOLAS = artifacts.require('BOLAS')
 const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
+const {fees} = require("./config/token_config");
 let token;
-
-const config = {
-    taxFee: 3,
-    liquidityFee: 1,
-    burnFee: 6,
-    marketingFee: 1,
-}
 
 async function reinitializeTokenNoFees(accounts) {
     token = await BOLAS.new(
@@ -45,7 +39,7 @@ contract('BOLAS FEES TEST', (accounts) => {
     it('transfers: should transfer with fees 10000 to accounts[2] with accounts[1] having 10000', async () => {
         await token.transfer(accounts[2], 10000, {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
-        assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, config))
+        assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, fees))
     })
 
     it('transfers: balances match after transfer with fees', async () => {
@@ -53,7 +47,7 @@ contract('BOLAS FEES TEST', (accounts) => {
         await token.excludeFromReward(accounts[2]);
         await token.transfer(accounts[2], 10000, {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
-        assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, config))
+        assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, fees))
     })
 
     it('transfers: should transfer with no fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
