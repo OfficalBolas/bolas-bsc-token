@@ -17,8 +17,8 @@ async function getETHToTokenPath(token, router) {
 
 async function getTokenToETHPath(token, router) {
     return [
-        await router.WETH(),
         token.address,
+        await router.WETH(),
     ];
 }
 
