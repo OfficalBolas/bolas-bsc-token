@@ -23,11 +23,8 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     it('should create an initial balance of 10000 for the account[1]', async () => {
         const balance = await token.balanceOf(accounts[1])
         assert.strictEqual(balance.toNumber(), 100000000)
-    });
-
-    it('should create an initial balance of 10000 for the account[1]', async () => {
-        const balance = await token.balanceOf(accounts[1])
-        assert.strictEqual(balance.toNumber(), 100000000)
+        const totalFees = await token.totalFees();
+        assert.strictEqual(totalFees.toNumber(), 0);
     });
 
     // TRANSFER
