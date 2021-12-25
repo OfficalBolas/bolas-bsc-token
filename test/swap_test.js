@@ -4,6 +4,7 @@ const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
+const {slippageTolerance} = require("./config/token_config");
 let token;
 
 async function reinitializeTokenWithFees(accounts) {
@@ -14,10 +15,6 @@ async function reinitializeTokenWithFees(accounts) {
 }
 
 contract('BOLAS SWAP TEST', (accounts) => {
-    const minBuySlippage = 10;
-    const maxBuySlippage = 12;
-    const minSellSlippage = 10;
-    const maxSellSlippage = 15;
     before(async () => {
         await reinitializeTokenWithFees(accounts);
     });
@@ -31,8 +28,6 @@ contract('BOLAS SWAP TEST', (accounts) => {
         const routerAddress = await token.uniswapV2Router();
         const totalSupply = await token.totalSupply();
         await token.approve(routerAddress, totalSupply, {from: accounts[1]});
-        const pair = await IUniswapV2Pair.at(await token.uniswapV2Pair());
-        await pair.approve(routerAddress, totalSupply, {from: accounts[1]});
         const allowance = await token.allowance(accounts[1], routerAddress);
         assert.strictEqual(allowance.toString(), totalSupply.toString());
     });
@@ -84,7 +79,7 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`SWAPPING SLIPPAGE: ${slippage}%`);
         console.log(`SWAPPING FEE: ETH ${ethBalanceDiff + SWAP_ETH_AMOUNT}`);
         assert(ethBalanceDiff < -SWAP_ETH_AMOUNT);
-        assert(slippage > minBuySlippage && slippage < maxBuySlippage);
+        assert(slippage > slippageTolerance.minBuySlippage && slippage < slippageTolerance.maxBuySlippage);
     });
     it('Sell tokens from uniswap', async () => {
         const SWAP_TOKEN_AMOUNT = 1055010;
@@ -106,6 +101,6 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`SWAPPING BALANCE CHANGE: BOLAS ${tokenBalanceDiff}`);
         console.log(`SWAPPING BALANCE CHANGE: ETH ${ethBalanceDiff}`);
         console.log(`SWAPPING SLIPPAGE: ${slippage}%`);
-        assert(slippage > minSellSlippage && slippage < maxSellSlippage);
+        assert(slippage > slippageTolerance.minSellSlippage && slippage < slippageTolerance.maxSellSlippage);
     });
 })
