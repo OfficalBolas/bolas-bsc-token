@@ -21,7 +21,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     mapping(address => bool) private _isExcludedFromFee;
 
     // Liquidity pool provider router
-    IUniswapV2Router02 internal _uniswapV2Router;
+    IUniswapV2Router02 public uniswapV2Router;
 
     // This Token and WETH pair contract address.
     address internal _uniswapV2Pair;
@@ -447,13 +447,13 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Generate the uniswap pair path of token -> weth
         address[] memory path = new address[](2);
         path[0] = address(this);
-        path[1] = _uniswapV2Router.WETH();
+        path[1] = uniswapV2Router.WETH();
 
-        _approve(address(this), address(_uniswapV2Router), amount);
+        _approve(address(this), address(uniswapV2Router), amount);
 
 
         // Swap tokens to ETH
-        _uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
             amount,
             0,
             path,
@@ -472,12 +472,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * Emits {Transfer} event. From this contract to the token and WETH Pai.
      */
     function addLiquidity(uint256 ethAmount, uint256 tokenAmount) private {
-        _approve(address(this), address(_uniswapV2Router), tokenAmount);
+        _approve(address(this), address(uniswapV2Router), tokenAmount);
 
         // Add the ETH and token to LP.
         // The LP tokens will be sent to burnAccount.
         // No one will have access to them, so the liquidity will be locked forever.
-        _uniswapV2Router.addLiquidityETH{value : ethAmount}(
+        uniswapV2Router.addLiquidityETH{value : ethAmount}(
             address(this),
             tokenAmount,
             0, // slippage is unavoidable
@@ -567,19 +567,19 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _minTokensBeforeSwap = minTokensBeforeSwap_;
 
         // init Router
-        IUniswapV2Router02 uniswapV2Router = IUniswapV2Router02(routerAddress);
+        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(routerAddress);
 
-        _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).getPair(address(this), uniswapV2Router.WETH());
+        _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).getPair(address(this), _uniswapV2Router.WETH());
 
         if (_uniswapV2Pair == address(0)) {
-            _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory())
-            .createPair(address(this), uniswapV2Router.WETH());
+            _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
+            .createPair(address(this), _uniswapV2Router.WETH());
         }
 
-        _uniswapV2Router = uniswapV2Router;
+        uniswapV2Router = _uniswapV2Router;
 
         // exclude uniswapV2Router from paying fees.
-        excludeAccountFromFee(address(uniswapV2Router));
+        excludeAccountFromFee(address(_uniswapV2Router));
         // exclude WETH and this Token Pair from paying fees.
         excludeAccountFromFee(_uniswapV2Pair);
 

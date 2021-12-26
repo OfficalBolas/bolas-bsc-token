@@ -7,16 +7,9 @@ const testHelpers = require('./utils/test_helpers');
 const {slippageTolerance} = require("./config/token_config");
 let token;
 
-async function reinitializeTokenWithFees(accounts) {
-    token = await BOLAS.new(
-        accounts[9], // marketing
-    );
-    await token.transfer(accounts[1], 100000000, {from: accounts[0]})
-}
-
 contract('BOLAS SWAP TEST', (accounts) => {
     before(async () => {
-        await reinitializeTokenWithFees(accounts);
+        token = await testHelpers.reinitializeTokenWithFees(accounts, 100000000);
     });
 
     it('Uniswap router exists', async () => {

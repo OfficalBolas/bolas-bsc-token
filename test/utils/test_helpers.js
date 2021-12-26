@@ -12,10 +12,10 @@ async function reinitializeTokenNoFees(accounts) {
     return token;
 }
 
-async function reinitializeTokenWithFees(accounts) {
+async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
     const token = await BOLAS.new();
     await token.initialize();
-    await token.transfer(accounts[1], 10000, {from: accounts[0]})
+    await token.transfer(accounts[1], account1Balance, {from: accounts[0]})
     return token;
 }
 
