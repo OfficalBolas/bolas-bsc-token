@@ -3,17 +3,15 @@ const testUtils = require('./utils/test_utils');
 let token;
 
 async function reinitializeTokenNoFees(accounts) {
-    token = await BOLAS.new(
-        accounts[9], // marketing
-    );
+    token = await BOLAS.new();
+    await token.initialize(accounts[9]);
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
-    await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
+    // await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
 }
 
 async function reinitializeTokenWithFees(accounts) {
-    token = await BOLAS.new(
-        accounts[9], // marketing
-    );
+    token = await BOLAS.new();
+    await token.initialize(accounts[9]);
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
 }
 
@@ -56,10 +54,10 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         );
     })
 
-    it('transfers: should revert zero-transfers', async () => {
-        await testUtils.assertFailure(
-            () => token.transfer(accounts[2], 0, {from: accounts[1]})
-        );
+    it('transfers: should handle zero-transfers normally', async () => {
+        await token.transfer(accounts[6], 0, {from: accounts[1]})
+        const balance = await token.balanceOf(accounts[6])
+        assert.strictEqual(balance.toString(), '0')
     })
 
     // NOTE: testing uint256 wrapping is impossible since you can't supply > 2^256 -1
