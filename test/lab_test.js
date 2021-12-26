@@ -1,21 +1,17 @@
-const BOLAS = artifacts.require('BOLAS')
 const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
+const {rawAmountToTokenAmount, assertBigNumberEqual} = require("./utils/test_utils");
 let token;
-
-async function reinitializeTokenWithFees(accounts) {
-    token = await BOLAS.new(
-        accounts[9], // marketing
-    );
-    await token.transfer(accounts[1], 10000, {from: accounts[0]})
-}
 
 contract('BOLAS LAB TEST', (accounts) => {
     before(async () => {
-        await reinitializeTokenWithFees(accounts);
+        token = await testHelpers.reinitializeTokenNoFees(accounts);
     });
 
-    it('Uniswap router exists', async () => {
-        console.log(testUtils.getMinimumAmountWithSlippage(1000, 10));
-    });
+    // META DATA
+    it('creation: should create an initial balance of 10000 for the creator', async () => {
+        const balance = await token.balanceOf(accounts[1])
+        console.log(balance);
+        assertBigNumberEqual(rawAmountToTokenAmount(balance), '10000')
+    })
 })

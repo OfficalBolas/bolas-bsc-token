@@ -1,3 +1,6 @@
+const Big = require('big.js');
+const {decimals} = require("../config/token_config");
+
 async function assertFailure(executor) {
     let threw = false;
     try {
@@ -42,6 +45,22 @@ function getMaximumAmountWithSlippage(amount, slippagePercent) {
     return amount + (amount * slippagePercent) / 100.0;
 }
 
+function rawAmountToTokenAmount(rawAmount) {
+    return new Big(rawAmount.toString()).div(new Big(10).pow(decimals)).toPrecision(decimals);
+}
+
+function tokenAmountToRawAmount(tokenAmount) {
+    return new Big(tokenAmount).mul(new Big(10).pow(decimals)).toFixed(0);
+}
+
+function bigNumberEqual(a, b) {
+    return new Big(a).eq(new Big(b));
+}
+
+function assertBigNumberEqual(a, b) {
+    assert(bigNumberEqual(a, b));
+}
+
 module.exports = {
     assertFailure,
     toWei,
@@ -51,4 +70,8 @@ module.exports = {
     getTokenToETHPath,
     getMinimumAmountWithSlippage,
     getMaximumAmountWithSlippage,
+    rawAmountToTokenAmount,
+    tokenAmountToRawAmount,
+    bigNumberEqual,
+    assertBigNumberEqual,
 }

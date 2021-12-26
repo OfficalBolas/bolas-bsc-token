@@ -1,3 +1,4 @@
+const decimals = 18;
 const fees = {
     taxFee: 3,
     liquidityFee: 1,
@@ -14,4 +15,5 @@ const slippageTolerance = {
 module.exports = {
     fees,
     slippageTolerance,
+    decimals,
 }
