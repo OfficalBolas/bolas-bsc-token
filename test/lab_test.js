@@ -1,6 +1,6 @@
 const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
-const {rawAmountToTokenAmount, assertBigNumberEqual} = require("./utils/test_utils");
+const {assertBigNumberEqual, rawToToken} = require("./utils/test_utils");
 let token;
 
 contract('BOLAS LAB TEST', (accounts) => {
@@ -12,6 +12,6 @@ contract('BOLAS LAB TEST', (accounts) => {
     it('creation: should create an initial balance of 10000 for the creator', async () => {
         const balance = await token.balanceOf(accounts[1])
         console.log(balance);
-        assertBigNumberEqual(rawAmountToTokenAmount(balance), '10000')
+        assertBigNumberEqual(rawToToken(balance), '10000')
     })
 })

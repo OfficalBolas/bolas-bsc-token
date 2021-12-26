@@ -45,16 +45,16 @@ function getMaximumAmountWithSlippage(amount, slippagePercent) {
     return amount + (amount * slippagePercent) / 100.0;
 }
 
-function rawAmountToTokenAmount(rawAmount) {
+function rawToToken(rawAmount) {
     return new Big(rawAmount.toString()).div(new Big(10).pow(decimals)).toPrecision(decimals);
 }
 
-function tokenAmountToRawAmount(tokenAmount) {
+function tokenToRaw(tokenAmount) {
     return new Big(tokenAmount).mul(new Big(10).pow(decimals)).toFixed(0);
 }
 
 function bigNumberEqual(a, b) {
-    return new Big(a).eq(new Big(b));
+    return new Big(a.toString()).eq(new Big(b.toString()));
 }
 
 function assertBigNumberEqual(a, b) {
@@ -70,8 +70,8 @@ module.exports = {
     getTokenToETHPath,
     getMinimumAmountWithSlippage,
     getMaximumAmountWithSlippage,
-    rawAmountToTokenAmount,
-    tokenAmountToRawAmount,
+    rawToToken,
+    tokenToRaw,
     bigNumberEqual,
     assertBigNumberEqual,
 }
