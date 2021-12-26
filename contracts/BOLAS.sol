@@ -14,20 +14,11 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 
 contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
 
-    // Keeps track of balances for address that are included in receiving reward.
-    mapping(address => uint256) private _reflectionBalances;
-
-    // Keeps track of balances for address that are excluded from receiving reward.
+    // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
 
     // Keeps track of which address are excluded from fee.
     mapping(address => bool) private _isExcludedFromFee;
-
-    // Keeps track of which address are excluded from reward.
-    mapping(address => bool) private _isExcludedFromReward;
-
-    // An array of addresses that are excluded from reward.
-    address[] private _excludedFromReward;
 
     // ERC20 Token Standard
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -54,17 +45,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Decimals of taxBurn. Used for have tax less than 1%.
     uint8 private _taxBurnDecimals;
 
-    // Decimals of taxReward. Used for have tax less than 1%.
-    uint8 private _taxRewardDecimals;
-
     // Decimals of taxLiquify. Used for have tax less than 1%.
     uint8 private _taxLiquifyDecimals;
 
     // This percent of a transaction will be burnt.
     uint8 private _taxBurn;
-
-    // This percent of a transaction will be redistribute to all holders.
-    uint8 private _taxReward;
 
     // This percent of a transaction will be added to the liquidity pool. More details at https://github.com/Sheldenshi/ERC20Deflationary.
     uint8 private _taxLiquify;
@@ -74,12 +59,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     // ERC20 Token Standard
     uint256 private _totalSupply;
-
-    // A number that helps distributing fees to all holders respectively.
-    uint256 private _reflectionTotal;
-
-    // Total amount of tokens rewarded / distributing.
-    uint256 private _totalRewarded;
 
     // Total amount of tokens burnt.
     uint256 private _totalBurnt;
@@ -103,7 +82,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     bool private _autoSwapAndLiquifyEnabled;
     bool private _autoBurnEnabled;
-    bool private _rewardEnabled;
 
     // Prevent reentrancy.
     modifier lockTheSwap {
@@ -119,22 +97,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 amount;
         // Amount tokens charged for burning.
         uint256 tBurnFee;
-        // Amount tokens charged to reward.
-        uint256 tRewardFee;
         // Amount tokens charged to add to liquidity.
         uint256 tLiquifyFee;
         // Amount tokens after fees.
         uint256 tTransferAmount;
-        // Reflection of amount.
-        uint256 rAmount;
-        // Reflection of burn fee.
-        uint256 rBurnFee;
-        // Reflection of reward fee.
-        uint256 rRewardFee;
-        // Reflection of liquify fee.
-        uint256 rLiquifyFee;
-        // Reflection of transfer amount.
-        uint256 rTransferAmount;
     }
 
     /*
@@ -142,7 +108,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     */
     event Burn(address from, uint256 amount);
     event TaxBurnUpdate(uint8 previousTax, uint8 previousDecimals, uint8 currentTax, uint8 currentDecimal);
-    event TaxRewardUpdate(uint8 previousTax, uint8 previousDecimals, uint8 currentTax, uint8 currentDecimal);
     event TaxLiquifyUpdate(uint8 previousTax, uint8 previousDecimals, uint8 currentTax, uint8 currentDecimal);
     event MinTokensBeforeSwapUpdated(uint256 previous, uint256 current);
     event SwapAndLiquify(
@@ -150,15 +115,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 ethReceived,
         uint256 tokensAddedToLiquidity
     );
-    event ExcludeAccountFromReward(address account);
-    event IncludeAccountInReward(address account);
     event ExcludeAccountFromFee(address account);
     event IncludeAccountInFee(address account);
     event EnabledAutoBurn();
-    event EnabledReward();
     event EnabledAutoSwapAndLiquify();
     event DisabledAutoBurn();
-    event DisabledReward();
     event DisabledAutoSwapAndLiquify();
     event Airdrop(uint256 amount);
 
@@ -170,11 +131,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // exclude owner and this contract from fee.
         excludeAccountFromFee(owner());
         excludeAccountFromFee(address(this));
-
-        // exclude owner, burnAccount, and this contract from receiving rewards.
-        _excludeAccountFromReward(owner());
-        _excludeAccountFromReward(burnAccount);
-        _excludeAccountFromReward(address(this));
 
         // Add initial supply to sender
         _mint(msg.sender, 160000000000000 * 10 ** decimals());
@@ -204,13 +160,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Returns the current reward tax.
-     */
-    function taxReward() public view returns (uint8) {
-        return _taxReward;
-    }
-
-    /**
      * @dev Returns the current liquify tax.
      */
     function taxLiquify() public view returns (uint8) {
@@ -225,13 +174,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Returns the current reward tax decimals.
-     */
-    function taxRewardDecimals() public view returns (uint8) {
-        return _taxRewardDecimals;
-    }
-
-    /**
      * @dev Returns the current liquify tax decimals.
      */
     function taxLiquifyDecimals() public view returns (uint8) {
@@ -243,13 +185,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function autoBurnEnabled() public view returns (bool) {
         return _autoBurnEnabled;
-    }
-
-    /**
-     * @dev Returns true if reward feature is enabled.
-     */
-    function rewardEnabled() public view returns (bool) {
-        return _rewardEnabled;
     }
 
     /**
@@ -288,13 +223,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Returns whether an account is excluded from reward.
-     */
-    function isExcludedFromReward(address account) external view returns (bool) {
-        return _isExcludedFromReward[account];
-    }
-
-    /**
      * @dev Returns whether an account is excluded from fee.
      */
     function isExcludedFromFee(address account) external view returns (bool) {
@@ -320,19 +248,15 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 accountBalance = balanceOf(account);
         require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
 
-        uint256 rAmount = _getRAmount(amount);
-
         // Transfer from account to the burnAccount
-        if (_isExcludedFromReward[account]) {
-            _balances[account] -= amount;
-        }
-        _reflectionBalances[account] -= rAmount;
-
+    unchecked {
+        _balances[account] = accountBalance - amount;
+    }
+    unchecked {
         _balances[burnAccount] += amount;
-        _reflectionBalances[burnAccount] += rAmount;
+    }
 
         _totalSupply -= amount;
-
         _totalBurnt += amount;
 
         emit Burn(account, amount);
@@ -359,17 +283,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         ValuesFromAmount memory values = _getValues(amount, _isExcludedFromFee[sender]);
 
-        if (_isExcludedFromReward[sender] && !_isExcludedFromReward[recipient]) {
-            _transferFromExcluded(sender, recipient, values);
-        } else if (!_isExcludedFromReward[sender] && _isExcludedFromReward[recipient]) {
-            _transferToExcluded(sender, recipient, values);
-        } else if (!_isExcludedFromReward[sender] && !_isExcludedFromReward[recipient]) {
-            _transferStandard(sender, recipient, values);
-        } else if (_isExcludedFromReward[sender] && _isExcludedFromReward[recipient]) {
-            _transferBothExcluded(sender, recipient, values);
-        } else {
-            _transferStandard(sender, recipient, values);
-        }
+        _balances[sender] = _balances[sender] - values.amount;
+        _balances[recipient] = _balances[recipient] + values.tTransferAmount;
 
         emit Transfer(sender, recipient, values.tTransferAmount);
 
@@ -386,21 +301,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Burn
         if (_autoBurnEnabled) {
             _balances[address(this)] += values.tBurnFee;
-            _reflectionBalances[address(this)] += values.rBurnFee;
             _approve(address(this), _msgSender(), values.tBurnFee);
             _burnFrom(address(this), values.tBurnFee);
-        }
-
-        // Reflect
-        if (_rewardEnabled) {
-            _distributeFee(values.rRewardFee, values.tRewardFee);
         }
 
         // Add to liquidity pool
         if (_autoSwapAndLiquifyEnabled) {
             // add liquidity fee to this contract.
             _balances[address(this)] += values.tLiquifyFee;
-            _reflectionBalances[address(this)] += values.rLiquifyFee;
 
             uint256 contractBalance = _balances[address(this)];
 
@@ -420,53 +328,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Performs transfer between two accounts that are both included in receiving reward.
-     */
-    function _transferStandard(address sender, address recipient, ValuesFromAmount memory values) private {
-
-        _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
-        _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
-
-
-    }
-
-    /**
-     * @dev Performs transfer from an included account to an excluded account.
-     * (included and excluded from receiving reward.)
-     */
-    function _transferToExcluded(address sender, address recipient, ValuesFromAmount memory values) private {
-
-        _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
-        _balances[recipient] = _balances[recipient] + values.tTransferAmount;
-        _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
-
-    }
-
-    /**
-     * @dev Performs transfer from an excluded account to an included account.
-     * (included and excluded from receiving reward.)
-     */
-    function _transferFromExcluded(address sender, address recipient, ValuesFromAmount memory values) private {
-
-        _balances[sender] = _balances[sender] - values.amount;
-        _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
-        _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
-
-    }
-
-    /**
-     * @dev Performs transfer between two accounts that are both excluded in receiving reward.
-     */
-    function _transferBothExcluded(address sender, address recipient, ValuesFromAmount memory values) private {
-
-        _balances[sender] = _balances[sender] - values.amount;
-        _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
-        _balances[recipient] = _balances[recipient] + values.tTransferAmount;
-        _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
-
-    }
-
-    /**
      * @dev Destroys `amount` tokens from `account`, deducting from the caller's
      * allowance.
      *
@@ -482,52 +343,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
         _approve(account, _msgSender(), currentAllowance - amount);
         _burn(account, amount);
-    }
-
-    /**
-      * @dev Excludes an account from receiving reward.
-      *
-      * Emits a {ExcludeAccountFromReward} event.
-      *
-      * Requirements:
-      *
-      * - `account` is included in receiving reward.
-      */
-    function _excludeAccountFromReward(address account) internal {
-        require(!_isExcludedFromReward[account], "Account is already excluded.");
-
-        if (_reflectionBalances[account] > 0) {
-            _balances[account] = tokenFromReflection(_reflectionBalances[account]);
-        }
-        _isExcludedFromReward[account] = true;
-        _excludedFromReward.push(account);
-
-        emit ExcludeAccountFromReward(account);
-    }
-
-    /**
-      * @dev Includes an account from receiving reward.
-      *
-      * Emits a {IncludeAccountInReward} event.
-      *
-      * Requirements:
-      *
-      * - `account` is excluded in receiving reward.
-      */
-    function _includeAccountInReward(address account) internal {
-        require(_isExcludedFromReward[account], "Account is already included.");
-
-        for (uint256 i = 0; i < _excludedFromReward.length; i++) {
-            if (_excludedFromReward[i] == account) {
-                _excludedFromReward[i] = _excludedFromReward[_excludedFromReward.length - 1];
-                _balances[account] = 0;
-                _isExcludedFromReward[account] = false;
-                _excludedFromReward.pop();
-                break;
-            }
-        }
-
-        emit IncludeAccountInReward(account);
     }
 
     /**
@@ -565,37 +380,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Airdrop tokens to all holders that are included from reward.
-     *  Requirements:
-     * - the caller must have a balance of at least `amount`.
-     */
-    function airdrop(uint256 amount) public {
-        address sender = _msgSender();
-        //require(!_isExcludedFromReward[sender], "Excluded addresses cannot call this function");
-        require(balanceOf(sender) >= amount, "The caller must have balance >= amount.");
-        ValuesFromAmount memory values = _getValues(amount, false);
-        if (_isExcludedFromReward[sender]) {
-            _balances[sender] -= values.amount;
-        }
-        _reflectionBalances[sender] -= values.rAmount;
-
-        _reflectionTotal = _reflectionTotal - values.rAmount;
-        _totalRewarded += amount;
-        emit Airdrop(amount);
-    }
-
-    /**
-     * @dev Used to figure out the balance after reflection.
-     * Requirements:
-     * - `rAmount` must be less than reflectTotal.
-     */
-    function tokenFromReflection(uint256 rAmount) internal view returns (uint256) {
-        require(rAmount <= _reflectionTotal, "Amount must be less than total reflections");
-        uint256 currentRate = _getRate();
-        return rAmount / currentRate;
-    }
-
-    /**
      * @dev Swap half of contract's token balance for ETH,
      * and pair it up with the other half to add to the
      * liquidity pool.
@@ -625,7 +409,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         emit SwapAndLiquify(tokensToSwap, ethAddToLiquify, tokensAddToLiquidity);
     }
-
 
     /**
      * @dev Swap `amount` tokens for ETH.
@@ -677,26 +460,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Distribute the `tRewardFee` tokens to all holders that are included in receiving reward.
-     * amount received is based on how many token one owns.
-     */
-    function _distributeFee(uint256 rRewardFee, uint256 tRewardFee) private {
-        // This would decrease rate, thus increase amount reward receive based on one's balance.
-        _reflectionTotal = _reflectionTotal - rRewardFee;
-        _totalRewarded += tRewardFee;
-    }
-
-    /**
-     * @dev Returns fees and transfer amount in both tokens and reflections.
+     * @dev Returns fees and transfer amount in tokens.
      * tXXXX stands for tokenXXXX
-     * rXXXX stands for reflectionXXXX
      * More details can be found at comments for ValuesForAmount Struct.
      */
     function _getValues(uint256 amount, bool deductTransferFee) private view returns (ValuesFromAmount memory) {
         ValuesFromAmount memory values;
         values.amount = amount;
         _getTValues(values, deductTransferFee);
-        _getRValues(values, deductTransferFee);
         return values;
     }
 
@@ -712,51 +483,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         } else {
             // calculate fee
             values.tBurnFee = _calculateTax(values.amount, _taxBurn, _taxBurnDecimals);
-            values.tRewardFee = _calculateTax(values.amount, _taxReward, _taxRewardDecimals);
             values.tLiquifyFee = _calculateTax(values.amount, _taxLiquify, _taxLiquifyDecimals);
 
             // amount after fee
-            values.tTransferAmount = values.amount - values.tBurnFee - values.tRewardFee - values.tLiquifyFee;
+            values.tTransferAmount = values.amount - values.tBurnFee - values.tLiquifyFee;
         }
 
-    }
-
-    /**
-     * @dev Adds fees and transfer amount in reflection to `values`.
-     * rXXXX stands for reflectionXXXX
-     * More details can be found at comments for ValuesForAmount Struct.
-     */
-    function _getRValues(ValuesFromAmount memory values, bool deductTransferFee) view private {
-        uint256 currentRate = _getRate();
-
-        values.rAmount = values.amount * currentRate;
-
-        if (deductTransferFee) {
-            values.rTransferAmount = values.rAmount;
-        } else {
-            values.rAmount = values.amount * currentRate;
-            values.rBurnFee = values.tBurnFee * currentRate;
-            values.rRewardFee = values.tRewardFee * currentRate;
-            values.rLiquifyFee = values.tLiquifyFee * currentRate;
-            values.rTransferAmount = values.rAmount - values.rBurnFee - values.rRewardFee - values.rLiquifyFee;
-        }
-
-    }
-
-    /**
-     * @dev Returns `amount` in reflection.
-     */
-    function _getRAmount(uint256 amount) private view returns (uint256) {
-        uint256 currentRate = _getRate();
-        return amount * currentRate;
-    }
-
-    /**
-     * @dev Returns the current reflection rate.
-     */
-    function _getRate() private view returns (uint256) {
-        (uint256 rSupply, uint256 tSupply) = _getCurrentSupply();
-        return rSupply / tSupply;
     }
 
     /**
@@ -795,30 +527,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Enables the reward feature.
-     * Distribute transaction amount * `taxReward_` amount of tokens each transaction when enabled.
-     *
-     * Emits a {EnabledReward} event.
-     *
-     * Requirements:
-     *
-     * - reward feature mush be disabled.
-     * - tax must be greater than 0.
-     * - tax decimals + 2 must be less than token decimals.
-     * (because tax rate is in percentage)
-    */
-    function enableReward(uint8 taxReward_, uint8 taxRewardDecimals_) public onlyOwner {
-        require(!_rewardEnabled, "Reward feature is already enabled.");
-        require(taxReward_ > 0, "Tax must be greater than 0.");
-        require(taxRewardDecimals_ + 2 <= decimals(), "Tax decimals must be less than token decimals - 2");
-
-        _rewardEnabled = true;
-        setTaxReward(taxReward_, taxRewardDecimals_);
-
-        emit EnabledReward();
-    }
-
-    /**
       * @dev Enables the auto swap and liquify feature.
       * Swaps half of transaction amount * `taxLiquify_` amount of tokens
       * to ETH and pair with the other half of tokens to the LP each transaction when enabled.
@@ -851,11 +559,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         _uniswapV2Router = uniswapV2Router;
 
-        // exclude uniswapV2Router from receiving reward.
-        _excludeAccountFromReward(address(uniswapV2Router));
-        // exclude WETH and this Token Pair from receiving reward.
-        _excludeAccountFromReward(_uniswapV2Pair);
-
         // exclude uniswapV2Router from paying fees.
         excludeAccountFromFee(address(uniswapV2Router));
         // exclude WETH and this Token Pair from paying fees.
@@ -884,24 +587,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _autoBurnEnabled = false;
 
         emit DisabledAutoBurn();
-    }
-
-    /**
-      * @dev Disables the reward feature.
-      *
-      * Emits a {DisabledReward} event.
-      *
-      * Requirements:
-      *
-      * - reward feature mush be enabled.
-      */
-    function disableReward() public onlyOwner {
-        require(_rewardEnabled, "Reward feature is already disabled.");
-
-        setTaxReward(0, 0);
-        _rewardEnabled = false;
-
-        emit DisabledReward();
     }
 
     /**
@@ -952,7 +637,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxBurn(uint8 taxBurn_, uint8 taxBurnDecimals_) public onlyOwner {
         require(_autoBurnEnabled, "Auto burn feature must be enabled. Try the EnableAutoBurn function.");
-        require(taxBurn_ + _taxReward + _taxLiquify < 100, "Tax fee too high.");
+        require(taxBurn_ + _taxLiquify < 100, "Tax fee too high.");
 
         uint8 previousTax = _taxBurn;
         uint8 previousDecimals = _taxBurnDecimals;
@@ -960,28 +645,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _taxBurnDecimals = taxBurnDecimals_;
 
         emit TaxBurnUpdate(previousTax, previousDecimals, taxBurn_, taxBurnDecimals_);
-    }
-
-    /**
-      * @dev Updates taxReward
-      *
-      * Emits a {TaxRewardUpdate} event.
-      *
-      * Requirements:
-      *
-      * - reward feature must be enabled.
-      * - total tax rate must be less than 100%.
-      */
-    function setTaxReward(uint8 taxReward_, uint8 taxRewardDecimals_) public onlyOwner {
-        require(_rewardEnabled, "Reward feature must be enabled. Try the EnableReward function.");
-        require(_taxBurn + taxReward_ + _taxLiquify < 100, "Tax fee too high.");
-
-        uint8 previousTax = _taxReward;
-        uint8 previousDecimals = _taxRewardDecimals;
-        _taxReward = taxReward_;
-        _taxBurnDecimals = taxRewardDecimals_;
-
-        emit TaxRewardUpdate(previousTax, previousDecimals, taxReward_, taxRewardDecimals_);
     }
 
     /**
@@ -996,7 +659,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxLiquify(uint8 taxLiquify_, uint8 taxLiquifyDecimals_) public onlyOwner {
         require(_autoSwapAndLiquifyEnabled, "Auto swap and liquify feature must be enabled. Try the EnableAutoSwapAndLiquify function.");
-        require(_taxBurn + _taxReward + taxLiquify_ < 100, "Tax fee too high.");
+        require(_taxBurn + taxLiquify_ < 100, "Tax fee too high.");
 
         uint8 previousTax = _taxLiquify;
         uint8 previousDecimals = _taxLiquifyDecimals;
