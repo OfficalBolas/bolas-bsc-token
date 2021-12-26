@@ -20,9 +20,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Keeps track of which address are excluded from fee.
     mapping(address => bool) private _isExcludedFromFee;
 
-    // ERC20 Token Standard
-    mapping(address => mapping(address => uint256)) private _allowances;
-
     // Liquidity pool provider router
     IUniswapV2Router02 internal _uniswapV2Router;
 
@@ -71,11 +68,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     // A threshold for swap and liquify.
     uint256 private _minTokensBeforeSwap;
-
-    // ERC20 Token Standard
-    string private _name;
-    // ERC20 Token Standard
-    string private _symbol;
 
     // Whether a previous call of SwapAndLiquify process is still in process.
     bool private _inSwapAndLiquify;
@@ -144,6 +136,20 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     // allow the contract to receive ETH
     receive() external payable {}
+
+    /**
+     * @dev See {IERC20-totalSupply}.
+     */
+    function totalSupply() public view override returns (uint256) {
+        return _totalSupply;
+    }
+
+    /**
+     * @dev See {IERC20-balanceOf}.
+     */
+    function balanceOf(address account) public view override returns (uint256) {
+        return _balances[account];
+    }
 
     /**
      * @dev Returns the address of this token and WETH pair.
@@ -229,6 +235,27 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         return _isExcludedFromFee[account];
     }
 
+    /** @dev Creates `amount` tokens and assigns them to `account`, increasing
+     * the total supply.
+     *
+     * Emits a {Transfer} event with `from` set to the zero address.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     */
+    function _mint(address account, uint256 amount) internal override {
+        require(account != address(0), "ERC20: mint to the zero address");
+
+        _beforeTokenTransfer(address(0), account, amount);
+
+        _totalSupply += amount;
+        _balances[account] += amount;
+        emit Transfer(address(0), account, amount);
+
+        _afterTokenTransfer(address(0), account, amount);
+    }
+
     /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
@@ -252,9 +279,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     unchecked {
         _balances[account] = accountBalance - amount;
     }
-    unchecked {
         _balances[burnAccount] += amount;
-    }
 
         _totalSupply -= amount;
         _totalBurnt += amount;
@@ -283,8 +308,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         ValuesFromAmount memory values = _getValues(amount, _isExcludedFromFee[sender]);
 
-        _balances[sender] = _balances[sender] - values.amount;
-        _balances[recipient] = _balances[recipient] + values.tTransferAmount;
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+    unchecked {
+        _balances[sender] = senderBalance - amount;
+    }
+        _balances[recipient] += amount;
 
         emit Transfer(sender, recipient, values.tTransferAmount);
 
