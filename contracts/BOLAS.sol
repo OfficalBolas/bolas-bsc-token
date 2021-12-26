@@ -578,10 +578,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         uniswapV2Router = _uniswapV2Router;
 
+        /*
         // exclude uniswapV2Router from paying fees.
         excludeAccountFromFee(address(_uniswapV2Router));
         // exclude WETH and this Token Pair from paying fees.
         excludeAccountFromFee(_uniswapV2Pair);
+        */
 
         // enable
         _autoSwapAndLiquifyEnabled = true;
