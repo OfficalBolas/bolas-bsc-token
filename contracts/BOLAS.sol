@@ -88,11 +88,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Amount of tokens for to transfer.
         uint256 amount;
         // Amount tokens charged for burning.
-        uint256 tBurnFee;
+        uint256 burnFee;
         // Amount tokens charged to add to liquidity.
-        uint256 tLiquifyFee;
+        uint256 liquifyFee;
         // Amount tokens after fees.
-        uint256 tTransferAmount;
+        uint256 transferAmount;
     }
 
     /*
@@ -316,7 +316,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
         _balances[recipient] += amount;
 
-        emit Transfer(sender, recipient, values.tTransferAmount);
+        emit Transfer(sender, recipient, values.transferAmount);
 
         if (!_isExcludedFromFee[sender]) {
             _afterTokenTransfer(values);
@@ -330,15 +330,15 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function _afterTokenTransfer(ValuesFromAmount memory values) internal {
         // Burn
         if (_autoBurnEnabled) {
-            _balances[address(this)] += values.tBurnFee;
-            _approve(address(this), _msgSender(), values.tBurnFee);
-            _burnFrom(address(this), values.tBurnFee);
+            _balances[address(this)] += values.burnFee;
+            _approve(address(this), _msgSender(), values.burnFee);
+            _burnFrom(address(this), values.burnFee);
         }
 
         // Add to liquidity pool
         if (_autoSwapAndLiquifyEnabled) {
             // add liquidity fee to this contract.
-            _balances[address(this)] += values.tLiquifyFee;
+            _balances[address(this)] += values.liquifyFee;
 
             uint256 contractBalance = _balances[address(this)];
 
@@ -513,28 +513,19 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function _getValues(uint256 amount, bool deductTransferFee) private view returns (ValuesFromAmount memory) {
         ValuesFromAmount memory values;
         values.amount = amount;
-        _getTValues(values, deductTransferFee);
-        return values;
-    }
-
-    /**
-     * @dev Adds fees and transfer amount in tokens to `values`.
-     * tXXXX stands for tokenXXXX
-     * More details can be found at comments for ValuesForAmount Struct.
-     */
-    function _getTValues(ValuesFromAmount memory values, bool deductTransferFee) view private {
 
         if (deductTransferFee) {
-            values.tTransferAmount = values.amount;
+            values.transferAmount = values.amount;
         } else {
             // calculate fee
-            values.tBurnFee = _calculateTax(values.amount, _taxBurn, _taxBurnDecimals);
-            values.tLiquifyFee = _calculateTax(values.amount, _taxLiquify, _taxLiquifyDecimals);
+            values.burnFee = _calculateTax(values.amount, _taxBurn, _taxBurnDecimals);
+            values.liquifyFee = _calculateTax(values.amount, _taxLiquify, _taxLiquifyDecimals);
 
             // amount after fee
-            values.tTransferAmount = values.amount - values.tBurnFee - values.tLiquifyFee;
+            values.transferAmount = values.amount - values.burnFee - values.liquifyFee;
         }
 
+        return values;
     }
 
     /**
