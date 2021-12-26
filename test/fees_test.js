@@ -23,7 +23,6 @@ contract('BOLAS FEES TEST', (accounts) => {
 
     it('transfers: balances match after transfer with fees', async () => {
         token = await testHelpers.reinitializeTokenWithFees(accounts);
-        await token.excludeFromReward(accounts[2]);
         await token.transfer(accounts[2], 10000, {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
         assert.strictEqual(balance.toNumber(), testHelpers.getTransferAmount(10000, fees))

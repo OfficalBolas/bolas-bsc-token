@@ -52,9 +52,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     uint8 private _taxLiquify;
 
     // ERC20 Token Standard
-    uint8 private _decimals;
-
-    // ERC20 Token Standard
     uint256 private _totalSupply;
 
     // Total amount of tokens burnt.
@@ -124,6 +121,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // exclude owner and this contract from fee.
         excludeAccountFromFee(owner());
         excludeAccountFromFee(address(this));
+
+        // configure fees
+        enableAutoBurn(6, 0);
+        enableAutoSwapAndLiquify(5, 0, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 1000000000000 * 10 ** decimals());
 
         // Add initial supply to sender
         _mint(msg.sender, 160000000000000 * 10 ** decimals());
@@ -314,7 +315,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     unchecked {
         _balances[sender] = senderBalance - amount;
     }
-        _balances[recipient] += amount;
+        _balances[recipient] += values.transferAmount;
 
         emit Transfer(sender, recipient, values.transferAmount);
 
@@ -331,7 +332,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Burn
         if (_autoBurnEnabled) {
             _balances[address(this)] += values.burnFee;
-            _approve(address(this), _msgSender(), values.burnFee);
             _burn(address(this), values.burnFee);
         }
 

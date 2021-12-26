@@ -22,10 +22,9 @@ async function reinitializeTokenWithFees(accounts) {
 function getTransferAmount(amount, config) {
     const taxAmount = amount * config.taxFee / 100;
     const liquidityAmount = amount * config.liquidityFee / 100;
-    const intermediateAmount = amount - (taxAmount + liquidityAmount);
-    const burnAmount = intermediateAmount * config.burnFee / 100;
-    const marketingAmount = intermediateAmount * config.marketingFee / 100;
-    return intermediateAmount - (burnAmount + marketingAmount);
+    const burnAmount = amount * config.burnFee / 100;
+    const marketingAmount = amount * config.marketingFee / 100;
+    return amount - (burnAmount + marketingAmount + taxAmount + liquidityAmount);
 }
 
 async function getTokenPairOfUniswapFactory(token) {
