@@ -1,5 +1,5 @@
 const testUtils = require("./test_utils");
-const {tokenToRaw} = require("./test_utils");
+const {tokenToRaw, rawToToken, getETHToTokenPath} = require("./test_utils");
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
@@ -36,15 +36,20 @@ async function getTokenReserves(token) {
     const pair = await IUniswapV2Pair.at(await token.uniswapV2Pair());
     const reserves = await pair.getReserves();
     try {
-        return [testUtils.fromWei(reserves.reserve1), reserves.reserve0.toNumber()];
+        return [testUtils.fromWei(reserves.reserve0), rawToToken(reserves.reserve1)];
     } catch (ex) {
-        return [testUtils.fromWei(reserves.reserve0), reserves.reserve1.toNumber()];
+        return [testUtils.fromWei(reserves.reserve1), rawToToken(reserves.reserve0)];
     }
 }
 
 async function getPriceOfTokenInETH(token) {
-    const reserves = await getTokenReserves(token);
-    return reserves[0] / reserves[1];
+    return 1 / (await getTokenAmountForETH(token, 1));
+}
+
+async function getTokenAmountForETH(token, ethMount) {
+    const router = await IUniswapV2Router02.at(await token.uniswapV2Router());
+    const tokenRawAmount = await router.getAmountsOut(ethMount, await getETHToTokenPath(token, router));
+    return tokenRawAmount[1];
 }
 
 module.exports = {
@@ -54,4 +59,5 @@ module.exports = {
     getPriceOfTokenInETH,
     reinitializeTokenNoFees,
     reinitializeTokenWithFees,
+    getTokenAmountForETH,
 }
