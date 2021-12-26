@@ -207,152 +207,109 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     receive() external payable {}
 
     /**
-     * @dev Returns the name of the token.
-     */
-    function name() public view virtual returns (string memory) {
-        return _name;
-    }
-
-    /**
-     * @dev Returns the symbol of the token, usually a shorter version of the
-     * name.
-     */
-    function symbol() public view virtual returns (string memory) {
-        return _symbol;
-    }
-
-    /**
-     * @dev Returns the number of decimals used to get its user representation.
-     * For example, if `decimals` equals `2`, a balance of `505` tokens should
-     * be displayed to a user as `5,05` (`505 / 10 ** 2`).
-     *
-     * NOTE: This information is only used for _display_ purposes: it in
-     * no way affects any of the arithmetic of the contract, including
-     * {IERC20-balanceOf} and {IERC20-transfer}.
-     */
-    function decimals() public view virtual returns (uint8) {
-        return _decimals;
-    }
-
-    /**
      * @dev Returns the address of this token and WETH pair.
      */
-    function uniswapV2Pair() public view virtual returns (address) {
+    function uniswapV2Pair() public view returns (address) {
         return _uniswapV2Pair;
     }
 
     /**
      * @dev Returns the current burn tax.
      */
-    function taxBurn() public view virtual returns (uint8) {
+    function taxBurn() public view returns (uint8) {
         return _taxBurn;
     }
 
     /**
      * @dev Returns the current reward tax.
      */
-    function taxReward() public view virtual returns (uint8) {
+    function taxReward() public view returns (uint8) {
         return _taxReward;
     }
 
     /**
      * @dev Returns the current liquify tax.
      */
-    function taxLiquify() public view virtual returns (uint8) {
+    function taxLiquify() public view returns (uint8) {
         return _taxLiquify;
     }
 
     /**
      * @dev Returns the current burn tax decimals.
      */
-    function taxBurnDecimals() public view virtual returns (uint8) {
+    function taxBurnDecimals() public view returns (uint8) {
         return _taxBurnDecimals;
     }
 
     /**
      * @dev Returns the current reward tax decimals.
      */
-    function taxRewardDecimals() public view virtual returns (uint8) {
+    function taxRewardDecimals() public view returns (uint8) {
         return _taxRewardDecimals;
     }
 
     /**
      * @dev Returns the current liquify tax decimals.
      */
-    function taxLiquifyDecimals() public view virtual returns (uint8) {
+    function taxLiquifyDecimals() public view returns (uint8) {
         return _taxLiquifyDecimals;
     }
 
     /**
     * @dev Returns true if auto burn feature is enabled.
      */
-    function autoBurnEnabled() public view virtual returns (bool) {
+    function autoBurnEnabled() public view returns (bool) {
         return _autoBurnEnabled;
     }
 
     /**
      * @dev Returns true if reward feature is enabled.
      */
-    function rewardEnabled() public view virtual returns (bool) {
+    function rewardEnabled() public view returns (bool) {
         return _rewardEnabled;
     }
 
     /**
      * @dev Returns true if auto swap and liquify feature is enabled.
      */
-    function autoSwapAndLiquifyEnabled() public view virtual returns (bool) {
+    function autoSwapAndLiquifyEnabled() public view returns (bool) {
         return _autoSwapAndLiquifyEnabled;
     }
 
     /**
      * @dev Returns the threshold before swap and liquify.
      */
-    function minTokensBeforeSwap() external view virtual returns (uint256) {
+    function minTokensBeforeSwap() external view returns (uint256) {
         return _minTokensBeforeSwap;
-    }
-
-    /**
-     * @dev See {IERC20-totalSupply}.
-     */
-    function totalSupply() external view virtual override returns (uint256) {
-        return _totalSupply;
     }
 
     /**
      * @dev Returns current supply of the token.
      * (currentSupply := totalSupply - totalBurnt)
      */
-    function currentSupply() external view virtual returns (uint256) {
+    function currentSupply() external view returns (uint256) {
         return _currentSupply;
     }
 
     /**
      * @dev Returns the total number of tokens burnt.
      */
-    function totalBurnt() external view virtual returns (uint256) {
+    function totalBurnt() external view returns (uint256) {
         return _totalBurnt;
     }
 
     /**
      * @dev Returns the total number of tokens locked in the LP.
      */
-    function totalTokensLockedInLiquidity() external view virtual returns (uint256) {
+    function totalTokensLockedInLiquidity() external view returns (uint256) {
         return _totalTokensLockedInLiquidity;
     }
 
     /**
      * @dev Returns the total number of ETH locked in the LP.
      */
-    function totalETHLockedInLiquidity() external view virtual returns (uint256) {
+    function totalETHLockedInLiquidity() external view returns (uint256) {
         return _totalETHLockedInLiquidity;
-    }
-
-    /**
-     * @dev See {IERC20-balanceOf}.
-     */
-    function balanceOf(address account) public view virtual override returns (uint256) {
-        if (_isExcludedFromReward[account]) return _tokenBalances[account];
-        return tokenFromReflection(_reflectionBalances[account]);
     }
 
     /**
@@ -370,96 +327,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev See {IERC20-transfer}.
-     *
-     * Requirements:
-     *
-     * - `recipient` cannot be the zero address.
-     * - the caller must have a balance of at least `amount`.
-     */
-    function transfer(address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(_msgSender(), recipient, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-allowance}.
-     */
-    function allowance(address owner, address spender) public view virtual override returns (uint256) {
-        return _allowances[owner][spender];
-    }
-
-    /**
-     * @dev See {IERC20-approve}.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function approve(address spender, uint256 amount) public virtual override returns (bool) {
-        _approve(_msgSender(), spender, amount);
-        return true;
-    }
-
-    /**
-     * @dev See {IERC20-transferFrom}.
-     *
-     * Emits an {Approval} event indicating the updated allowance. This is not
-     * required by the EIP. See the note at the beginning of {ERC20}.
-     *
-     * Requirements:
-     *
-     * - `sender` and `recipient` cannot be the zero address.
-     * - `sender` must have a balance of at least `amount`.
-     * - the caller must have allowance for ``sender``'s tokens of at least
-     * `amount`.
-     */
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
-        _transfer(sender, recipient, amount);
-        require(_allowances[sender][_msgSender()] >= amount, "ERC20: transfer amount exceeds allowance");
-        _approve(sender, _msgSender(), _allowances[sender][_msgSender()] - amount);
-        return true;
-    }
-
-    /**
-     * @dev Atomically increases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
-        _approve(_msgSender(), spender, _allowances[_msgSender()][spender] + addedValue);
-        return true;
-    }
-
-    /**
-     * @dev Atomically decreases the allowance granted to `spender` by the caller.
-     *
-     * This is an alternative to {approve} that can be used as a mitigation for
-     * problems described in {IERC20-approve}.
-     *
-     * Emits an {Approval} event indicating the updated allowance.
-     *
-     * Requirements:
-     *
-     * - `spender` cannot be the zero address.
-     * - `spender` must have allowance for the caller of at least
-     * `subtractedValue`.
-     */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
-        uint256 currentAllowance = _allowances[_msgSender()][spender];
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
-        _approve(_msgSender(), spender, currentAllowance - subtractedValue);
-        return true;
-    }
-
-    /**
      * @dev Destroys `amount` tokens from `account`, reducing the
      * total supply.
      *
@@ -471,7 +338,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `account` cannot be the zero address.
      * - `account` must have at least `amount` tokens.
      */
-    function _burn(address account, uint256 amount) internal virtual {
+
+    function _burn(address account, uint256 amount) internal override {
         require(account != burnAccount, "ERC20: burn from the burn address");
 
         uint256 accountBalance = balanceOf(account);
@@ -497,27 +365,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Sets `amount` as the allowance of `spender` over the `owner`s tokens.
-     *
-     * This is internal function is equivalent to `approve`, and can be used to
-     * e.g. set automatic allowances for certain subsystems, etc.
-     *
-     * Emits an {Approval} event.
-     *
-     * Requirements:
-     *
-     * - `owner` cannot be the zero address.
-     * - `spender` cannot be the zero address.
-     */
-    function _approve(address owner, address spender, uint256 amount) internal virtual {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
-
-        _allowances[owner][spender] = amount;
-        emit Approval(owner, spender, amount);
-    }
-
-    /**
      * @dev Moves tokens `amount` from `sender` to `recipient`.
      *
      * This is internal function is equivalent to {transfer}, and can be used to
@@ -531,7 +378,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal virtual {
+    function _transfer(address sender, address recipient, uint256 amount) internal override {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
@@ -560,15 +407,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /**
       * @dev Performs all the functionalities that are enabled.
       */
-    function _afterTokenTransfer(ValuesFromAmount memory values) internal virtual {
+    function _afterTokenTransfer(ValuesFromAmount memory values) internal {
         // Burn
         if (_autoBurnEnabled) {
             _tokenBalances[address(this)] += values.tBurnFee;
             _reflectionBalances[address(this)] += values.rBurnFee;
             _approve(address(this), _msgSender(), values.tBurnFee);
-            burnFrom(address(this), values.tBurnFee);
+            _burnFrom(address(this), values.tBurnFee);
         }
-
 
         // Reflect
         if (_rewardEnabled) {
@@ -602,7 +448,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * @dev Performs transfer between two accounts that are both included in receiving reward.
      */
     function _transferStandard(address sender, address recipient, ValuesFromAmount memory values) private {
-
 
         _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
         _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
@@ -647,14 +492,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Destroys `amount` tokens from the caller.
-     *
-     */
-    function burn(uint256 amount) public virtual {
-        _burn(_msgSender(), amount);
-    }
-
-    /**
      * @dev Destroys `amount` tokens from `account`, deducting from the caller's
      * allowance.
      *
@@ -665,7 +502,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - the caller must have allowance for ``accounts``'s tokens of at least
      * `amount`.
      */
-    function burnFrom(address account, uint256 amount) public virtual {
+    function _burnFrom(address account, uint256 amount) private {
         uint256 currentAllowance = allowance(account, _msgSender());
         require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
         _approve(account, _msgSender(), currentAllowance - amount);
