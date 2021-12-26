@@ -73,10 +73,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     uint8 private _decimals;
 
     // ERC20 Token Standard
-    uint256 private  _totalSupply;
-
-    // Current supply:= total supply - burnt tokens
-    uint256 private _currentSupply;
+    uint256 private _totalSupply;
 
     // A number that helps distributing fees to all holders respectively.
     uint256 private _reflectionTotal;
@@ -170,27 +167,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        _mint(msg.sender, 160000000000000 * 10 ** decimals());
-    }
-
-    function _authorizeUpgrade(address newImplementation)
-    internal
-    onlyOwner
-    override
-    {}
-
-    constructor (string memory name_, string memory symbol_, uint8 decimals_, uint256 tokenSupply_) {
-        // Sets the values for `name`, `symbol`, `totalSupply`, `currentSupply`, and `rTotal`.
-        _name = name_;
-        _symbol = symbol_;
-        _decimals = decimals_;
-        _totalSupply = tokenSupply_ * (10 ** decimals_);
-        _currentSupply = _totalSupply;
-        _reflectionTotal = (~uint256(0) - (~uint256(0) % _totalSupply));
-
-        // Mint
-        _reflectionBalances[_msgSender()] = _reflectionTotal;
-
         // exclude owner and this contract from fee.
         excludeAccountFromFee(owner());
         excludeAccountFromFee(address(this));
@@ -200,8 +176,15 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _excludeAccountFromReward(burnAccount);
         _excludeAccountFromReward(address(this));
 
-        emit Transfer(address(0), _msgSender(), _totalSupply);
+        // Add initial supply to sender
+        _mint(msg.sender, 160000000000000 * 10 ** decimals());
     }
+
+    function _authorizeUpgrade(address newImplementation)
+    internal
+    onlyOwner
+    override
+    {}
 
     // allow the contract to receive ETH
     receive() external payable {}
@@ -284,14 +267,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Returns current supply of the token.
-     * (currentSupply := totalSupply - totalBurnt)
-     */
-    function currentSupply() external view returns (uint256) {
-        return _currentSupply;
-    }
-
-    /**
      * @dev Returns the total number of tokens burnt.
      */
     function totalBurnt() external view returns (uint256) {
@@ -356,7 +331,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _balances[burnAccount] += amount;
         _reflectionBalances[burnAccount] += rAmount;
 
-        _currentSupply -= amount;
+        _totalSupply -= amount;
 
         _totalBurnt += amount;
 
@@ -610,17 +585,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Returns the reflected amount of a token.
-     *  Requirements:
-     * - `amount` must be less than total supply.
-     */
-    function reflectionFromToken(uint256 amount, bool deductTransferFee) internal view returns (uint256) {
-        require(amount <= _totalSupply, "Amount must be less than supply");
-        ValuesFromAmount memory values = _getValues(amount, deductTransferFee);
-        return values.rTransferAmount;
-    }
-
-    /**
      * @dev Used to figure out the balance after reflection.
      * Requirements:
      * - `rAmount` must be less than reflectTotal.
@@ -796,21 +760,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
-     * @dev Returns the current reflection supply and token supply.
-     */
-    function _getCurrentSupply() private view returns (uint256, uint256) {
-        uint256 rSupply = _reflectionTotal;
-        uint256 tSupply = _totalSupply;
-        for (uint256 i = 0; i < _excludedFromReward.length; i++) {
-            if (_reflectionBalances[_excludedFromReward[i]] > rSupply || _balances[_excludedFromReward[i]] > tSupply) return (_reflectionTotal, _totalSupply);
-            rSupply = rSupply - _reflectionBalances[_excludedFromReward[i]];
-            tSupply = tSupply - _balances[_excludedFromReward[i]];
-        }
-        if (rSupply < _reflectionTotal / _totalSupply) return (_reflectionTotal, _totalSupply);
-        return (rSupply, tSupply);
-    }
-
-    /**
      * @dev Returns fee based on `amount` and `taxRate`
      */
     function _calculateTax(uint256 amount, uint8 tax, uint8 taxDecimals_) private pure returns (uint256) {
@@ -983,7 +932,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       * - `minTokensBeforeSwap_` must be less than _currentSupply.
       */
     function setMinTokensBeforeSwap(uint256 minTokensBeforeSwap_) public onlyOwner {
-        require(minTokensBeforeSwap_ < _currentSupply, "minTokensBeforeSwap must be higher than current supply.");
+        require(minTokensBeforeSwap_ < _totalSupply, "minTokensBeforeSwap must be lower than current supply.");
 
         uint256 previous = _minTokensBeforeSwap;
         _minTokensBeforeSwap = minTokensBeforeSwap_;
