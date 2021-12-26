@@ -114,6 +114,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event DisabledAutoBurn();
     event DisabledAutoSwapAndLiquify();
     event Airdrop(uint256 amount);
+    event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
 
     function initialize() initializer public {
         __ERC20_init("BOLAS", "BOLAS");
@@ -389,6 +390,22 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _isExcludedFromFee[account] = true;
 
         emit ExcludeAccountFromFee(account);
+    }
+
+    /**
+     * @dev Excludes multiple accounts from fee.
+      *
+      * Emits a {ExcludeMultipleAccountsFromFees} event.
+      */
+    function excludeMultipleAccountsFromFees(
+        address[] calldata accounts,
+        bool excluded
+    ) public onlyOwner {
+        for (uint256 i = 0; i < accounts.length; i++) {
+            _isExcludedFromFee[accounts[i]] = excluded;
+        }
+
+        emit ExcludeMultipleAccountsFromFees(accounts, excluded);
     }
 
     /**

@@ -8,7 +8,7 @@ async function reinitializeTokenNoFees(accounts) {
     const token = await BOLAS.new();
     await token.initialize();
     await token.transfer(accounts[1], 10000, {from: accounts[0]})
-    // await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
+    await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
     return token;
 }
 
