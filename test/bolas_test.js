@@ -1,31 +1,13 @@
-const BOLAS = artifacts.require('BOLAS');
 const testUtils = require('./utils/test_utils');
+const testHelpers = require('./utils/test_helpers');
 let token;
-
-async function reinitializeTokenNoFees(accounts) {
-    token = await BOLAS.new();
-    await token.initialize(accounts[9]);
-    await token.transfer(accounts[1], 10000, {from: accounts[0]})
-    // await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
-}
-
-async function reinitializeTokenWithFees(accounts) {
-    token = await BOLAS.new();
-    await token.initialize(accounts[9]);
-    await token.transfer(accounts[1], 10000, {from: accounts[0]})
-}
 
 contract('BOLAS GENERAL TEST', (accounts) => {
     before(async () => {
-        await reinitializeTokenNoFees(accounts);
-    })
-
+        token = await testHelpers.reinitializeTokenNoFees(accounts);
+    });
 
     // META DATA
-    it('creation: marketing wallet should be set & correct', async () => {
-        const marketingWallet = await token.marketingWallet()
-        assert.strictEqual(marketingWallet, accounts[9])
-    });
     it('creation: should create an initial balance of 10000 for the creator', async () => {
         const balance = await token.balanceOf(accounts[1])
         assert.strictEqual(balance.toNumber(), 10000)
@@ -65,7 +47,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
 
     // APPROVALS
     it('approvals: msg.sender should approve 100 to accounts[1]', async () => {
-        await reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeTokenNoFees(accounts);
         await token.approve(accounts[2], 100, {from: accounts[1]})
         const allowance = await token.allowance(accounts[1], accounts[2])
         assert.strictEqual(allowance.toNumber(), 100)
@@ -91,7 +73,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
     })
     // should approve 100 of msg.sender & withdraw 50, twice. (should succeed)
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 twice.', async () => {
-        await reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeTokenNoFees(accounts);
         await token.approve(accounts[2], 100, {from: accounts[1]})
         const allowance01 = await token.allowance(accounts[1], accounts[2])
         assert.strictEqual(allowance01.toNumber(), 100)
@@ -121,7 +103,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
 
     // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', async () => {
-        await reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeTokenNoFees(accounts);
         await token.approve(accounts[2], 100, {from: accounts[1]})
         const allowance01 = await token.allowance(accounts[1], accounts[2])
         assert.strictEqual(allowance01.toNumber(), 100)

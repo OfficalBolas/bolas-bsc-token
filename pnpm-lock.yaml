@@ -4,6 +4,8 @@ specifiers:
   '@openzeppelin/contracts': ^4.4.1
   '@openzeppelin/contracts-upgradeable': ^4.4.1
   '@truffle/hdwallet-provider': ^2.0.0
+  '@uniswap/v2-core': ^1.0.1
+  '@uniswap/v2-periphery': ^1.1.0-beta.0
   chai: ^4.3.4
   mocha: ^9.1.3
   truffle: ^5.4.25
@@ -12,6 +14,8 @@ dependencies:
   '@openzeppelin/contracts': 4.4.1
   '@openzeppelin/contracts-upgradeable': 4.4.1
   '@truffle/hdwallet-provider': 2.0.0
+  '@uniswap/v2-core': 1.0.1
+  '@uniswap/v2-periphery': 1.1.0-beta.0
   truffle: 5.4.25
 
 devDependencies:
@@ -2417,6 +2421,29 @@ packages:
   /@ungap/promise-all-settled/1.1.2:
     resolution: { integrity: sha512-sL/cEvJWAnClXw0wHk85/2L0G6Sj8UB0Ctc1TEMbKSsmpRosqhwj9gWgFRZSrBr2f9tiXISwNhCPmlfqUqyb9Q== }
     dev: true
+
+  /@uniswap/lib/1.1.1:
+    resolution: { integrity: sha512-2yK7sLpKIT91TiS5sewHtOa7YuM8IuBXVl4GZv2jZFys4D2sY7K5vZh6MqD25TPA95Od+0YzCVq6cTF2IKrOmg== }
+    engines: { node: '>=10' }
+    dev: false
+
+  /@uniswap/v2-core/1.0.0:
+    resolution: { integrity: sha512-BJiXrBGnN8mti7saW49MXwxDBRFiWemGetE58q8zgfnPPzQKq55ADltEILqOt6VFZ22kVeVKbF8gVd8aY3l7pA== }
+    engines: { node: '>=10' }
+    dev: false
+
+  /@uniswap/v2-core/1.0.1:
+    resolution: { integrity: sha512-MtybtkUPSyysqLY2U210NBDeCHX+ltHt3oADGdjqoThZaFRDKwM6k1Nb3F0A3hk5hwuQvytFWhrWHOEq6nVJ8Q== }
+    engines: { node: '>=10' }
+    dev: false
+
+  /@uniswap/v2-periphery/1.1.0-beta.0:
+    resolution: { integrity: sha512-6dkwAMKza8nzqYiXEr2D86dgW3TTavUvCR0w2Tu33bAbM8Ah43LKAzH7oKKPRT5VJQaMi1jtkGs1E8JPor1n5g== }
+    engines: { node: '>=10' }
+    dependencies:
+      '@uniswap/lib': 1.1.1
+      '@uniswap/v2-core': 1.0.0
+    dev: false
 
   /@wry/context/0.6.1:
     resolution: { integrity: sha512-LOmVnY1iTU2D8tv4Xf6MVMZZ+juIJ87Kt/plMijjN20NMAXGmH4u8bS1t0uT74cZ5gwpocYueV58YwyI8y+GKw== }
