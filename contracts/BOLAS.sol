@@ -18,7 +18,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     mapping(address => uint256) private _reflectionBalances;
 
     // Keeps track of balances for address that are excluded from receiving reward.
-    mapping(address => uint256) private _tokenBalances;
+    mapping(address => uint256) private _balances;
 
     // Keeps track of which address are excluded from fee.
     mapping(address => bool) private _isExcludedFromFee;
@@ -349,11 +349,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // Transfer from account to the burnAccount
         if (_isExcludedFromReward[account]) {
-            _tokenBalances[account] -= amount;
+            _balances[account] -= amount;
         }
         _reflectionBalances[account] -= rAmount;
 
-        _tokenBalances[burnAccount] += amount;
+        _balances[burnAccount] += amount;
         _reflectionBalances[burnAccount] += rAmount;
 
         _currentSupply -= amount;
@@ -410,7 +410,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function _afterTokenTransfer(ValuesFromAmount memory values) internal {
         // Burn
         if (_autoBurnEnabled) {
-            _tokenBalances[address(this)] += values.tBurnFee;
+            _balances[address(this)] += values.tBurnFee;
             _reflectionBalances[address(this)] += values.rBurnFee;
             _approve(address(this), _msgSender(), values.tBurnFee);
             _burnFrom(address(this), values.tBurnFee);
@@ -424,10 +424,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Add to liquidity pool
         if (_autoSwapAndLiquifyEnabled) {
             // add liquidity fee to this contract.
-            _tokenBalances[address(this)] += values.tLiquifyFee;
+            _balances[address(this)] += values.tLiquifyFee;
             _reflectionBalances[address(this)] += values.rLiquifyFee;
 
-            uint256 contractBalance = _tokenBalances[address(this)];
+            uint256 contractBalance = _balances[address(this)];
 
             // whether the current contract balances makes the threshold to swap and liquify.
             bool overMinTokensBeforeSwap = contractBalance >= _minTokensBeforeSwap;
@@ -462,7 +462,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function _transferToExcluded(address sender, address recipient, ValuesFromAmount memory values) private {
 
         _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
-        _tokenBalances[recipient] = _tokenBalances[recipient] + values.tTransferAmount;
+        _balances[recipient] = _balances[recipient] + values.tTransferAmount;
         _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
 
     }
@@ -473,7 +473,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function _transferFromExcluded(address sender, address recipient, ValuesFromAmount memory values) private {
 
-        _tokenBalances[sender] = _tokenBalances[sender] - values.amount;
+        _balances[sender] = _balances[sender] - values.amount;
         _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
         _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
 
@@ -484,9 +484,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function _transferBothExcluded(address sender, address recipient, ValuesFromAmount memory values) private {
 
-        _tokenBalances[sender] = _tokenBalances[sender] - values.amount;
+        _balances[sender] = _balances[sender] - values.amount;
         _reflectionBalances[sender] = _reflectionBalances[sender] - values.rAmount;
-        _tokenBalances[recipient] = _tokenBalances[recipient] + values.tTransferAmount;
+        _balances[recipient] = _balances[recipient] + values.tTransferAmount;
         _reflectionBalances[recipient] = _reflectionBalances[recipient] + values.rTransferAmount;
 
     }
@@ -522,7 +522,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(!_isExcludedFromReward[account], "Account is already excluded.");
 
         if (_reflectionBalances[account] > 0) {
-            _tokenBalances[account] = tokenFromReflection(_reflectionBalances[account]);
+            _balances[account] = tokenFromReflection(_reflectionBalances[account]);
         }
         _isExcludedFromReward[account] = true;
         _excludedFromReward.push(account);
@@ -545,7 +545,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         for (uint256 i = 0; i < _excludedFromReward.length; i++) {
             if (_excludedFromReward[i] == account) {
                 _excludedFromReward[i] = _excludedFromReward[_excludedFromReward.length - 1];
-                _tokenBalances[account] = 0;
+                _balances[account] = 0;
                 _isExcludedFromReward[account] = false;
                 _excludedFromReward.pop();
                 break;
@@ -600,7 +600,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(balanceOf(sender) >= amount, "The caller must have balance >= amount.");
         ValuesFromAmount memory values = _getValues(amount, false);
         if (_isExcludedFromReward[sender]) {
-            _tokenBalances[sender] -= values.amount;
+            _balances[sender] -= values.amount;
         }
         _reflectionBalances[sender] -= values.rAmount;
 
@@ -802,9 +802,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 rSupply = _reflectionTotal;
         uint256 tSupply = _totalSupply;
         for (uint256 i = 0; i < _excludedFromReward.length; i++) {
-            if (_reflectionBalances[_excludedFromReward[i]] > rSupply || _tokenBalances[_excludedFromReward[i]] > tSupply) return (_reflectionTotal, _totalSupply);
+            if (_reflectionBalances[_excludedFromReward[i]] > rSupply || _balances[_excludedFromReward[i]] > tSupply) return (_reflectionTotal, _totalSupply);
             rSupply = rSupply - _reflectionBalances[_excludedFromReward[i]];
-            tSupply = tSupply - _tokenBalances[_excludedFromReward[i]];
+            tSupply = tSupply - _balances[_excludedFromReward[i]];
         }
         if (rSupply < _reflectionTotal / _totalSupply) return (_reflectionTotal, _totalSupply);
         return (rSupply, tSupply);
