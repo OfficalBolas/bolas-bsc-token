@@ -332,7 +332,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         if (_autoBurnEnabled) {
             _balances[address(this)] += values.burnFee;
             _approve(address(this), _msgSender(), values.burnFee);
-            _burnFrom(address(this), values.burnFee);
+            _burn(address(this), values.burnFee);
         }
 
         // Add to liquidity pool
@@ -355,24 +355,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             }
         }
 
-    }
-
-    /**
-     * @dev Destroys `amount` tokens from `account`, deducting from the caller's
-     * allowance.
-     *
-     * See {ERC20-_burn} and {ERC20-allowance}.
-     *
-     * Requirements:
-     *
-     * - the caller must have allowance for ``accounts``'s tokens of at least
-     * `amount`.
-     */
-    function _burnFrom(address account, uint256 amount) private {
-        uint256 currentAllowance = allowance(account, _msgSender());
-        require(currentAllowance >= amount, "ERC20: burn amount exceeds allowance");
-        _approve(account, _msgSender(), currentAllowance - amount);
-        _burn(account, amount);
     }
 
     /**
