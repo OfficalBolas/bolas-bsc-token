@@ -10,6 +10,7 @@
 		"@uniswap/v2-core": "^1.0.1",
 		"@uniswap/v2-periphery": "^1.1.0-beta.0",
 		"big.js": "^6.1.1",
-		"truffle": "^5.4.25"
+		"truffle": "^5.4.25",
+		"web3": "^1.6.1"
 	}
 }
