@@ -270,7 +270,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      *
      * - `account` cannot be the zero address.
      */
-    function _mint(address account, uint256 amount) internal override {
+    function _mint(address account, uint256 amount) internal override updateAccount(account) {
         require(account != address(0), "ERC20: mint to the zero address");
 
         _beforeTokenTransfer(address(0), account, amount);
@@ -295,7 +295,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `account` must have at least `amount` tokens.
      */
 
-    function _burn(address account, uint256 amount) internal override {
+    function _burn(address account, uint256 amount) internal override updateAccount(account) {
         require(account != burnAccount, "ERC20: burn from the burn address");
 
         uint256 accountBalance = balanceOf(account);
@@ -328,7 +328,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `recipient` cannot be the zero address.
      * - `sender` must have a balance of at least `amount`.
      */
-    function _transfer(address sender, address recipient, uint256 amount) internal override {
+    function _transfer(address sender, address recipient, uint256 amount) internal override updateAccount(sender) updateAccount(recipient) {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
