@@ -72,6 +72,28 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     bool private _autoSwapAndLiquifyEnabled;
     bool private _autoBurnEnabled;
 
+    // Dividend states
+    uint private constant _pointMultiplier = 10 ** 18;
+    mapping(address => uint256) private _lastDividendPoints;
+    uint totalSupply;
+    uint totalDividendPoints;
+    uint unclaimedDividends;
+
+    struct Account {
+        uint balance;
+        uint lastDividendPoints;
+    }
+
+    modifier updateAccount(address account) {
+        var owing = dividendsOwing(account);
+        if (owing > 0) {
+            unclaimedDividends -= owing;
+            _balances[account] += owing;
+            _lastDividendPoints[account] = totalDividendPoints;
+        }
+        _;
+    }
+
     // Prevent reentrancy.
     modifier lockTheSwap {
         require(!_inSwapAndLiquify, "Currently in swap and liquify.");
@@ -128,6 +150,17 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // Add initial supply to sender
         _mint(msg.sender, 160000000000000 * 10 ** decimals());
+    }
+
+    function dividendsOwing(address account) internal returns (uint) {
+        var newDividendPoints = totalDividendPoints - _lastDividendPoints[account];
+        return (_balances[account] * newDividendPoints) / pointMultiplier;
+    }
+
+    function disburse(uint amount) {
+        totalDividendPoints += (amount * pointsMultiplier / totalSupply);
+        totalSupply += amount;
+        unclaimedDividends += amount;
     }
 
     function _authorizeUpgrade(address newImplementation)
