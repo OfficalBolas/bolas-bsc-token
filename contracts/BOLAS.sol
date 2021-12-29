@@ -75,9 +75,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Dividend states
     uint private constant _pointMultiplier = 10 ** 18;
     mapping(address => uint256) private _lastDividendPoints;
-    uint totalSupply;
-    uint totalDividendPoints;
-    uint unclaimedDividends;
+    uint private totalDividendPoints;
 
     struct Account {
         uint balance;
@@ -85,9 +83,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     modifier updateAccount(address account) {
-        var owing = dividendsOwing(account);
+        uint owing = dividendsOwing(account);
         if (owing > 0) {
-            unclaimedDividends -= owing;
             _balances[account] += owing;
             _lastDividendPoints[account] = totalDividendPoints;
         }
@@ -152,15 +149,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _mint(msg.sender, 160000000000000 * 10 ** decimals());
     }
 
-    function dividendsOwing(address account) internal returns (uint) {
-        var newDividendPoints = totalDividendPoints - _lastDividendPoints[account];
-        return (_balances[account] * newDividendPoints) / pointMultiplier;
-    }
-
-    function disburse(uint amount) {
-        totalDividendPoints += (amount * pointsMultiplier / totalSupply);
-        totalSupply += amount;
-        unclaimedDividends += amount;
+    function dividendsOwing(address account) public view returns (uint) {
+        uint newDividendPoints = totalDividendPoints - _lastDividendPoints[account];
+        return (_balances[account] * newDividendPoints) / _pointMultiplier;
     }
 
     function _authorizeUpgrade(address newImplementation)
