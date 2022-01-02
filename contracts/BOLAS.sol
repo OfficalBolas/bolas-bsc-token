@@ -634,10 +634,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         } else {
             // calculate fee
             values.burnFee = _calculateTax(values.amount, _taxBurn, _taxBurnDecimals);
+            values.dividendFee = _calculateTax(values.amount, _taxDividend, _taxDividendDecimals);
             values.liquifyFee = _calculateTax(values.amount, _taxLiquify, _taxLiquifyDecimals);
 
             // amount after fee
-            values.transferAmount = values.amount - values.burnFee - values.liquifyFee;
+            values.transferAmount = values.amount - values.burnFee - values.dividendFee - values.liquifyFee;
         }
 
         return values;

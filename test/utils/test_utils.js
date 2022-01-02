@@ -58,7 +58,7 @@ function bigNumberEqual(a, b) {
 }
 
 function assertBigNumberEqual(a, b) {
-    assert(bigNumberEqual(a, b));
+    assert(bigNumberEqual(a, b), `${a.toString()} != ${b.toString()}`);
 }
 
 module.exports = {

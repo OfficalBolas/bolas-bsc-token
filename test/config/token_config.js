@@ -1,9 +1,9 @@
 const decimals = 18;
 const fees = {
     taxFee: 3,
-    liquidityFee: 1,
+    liquidityFee: 2,
     burnFee: 6,
-    marketingFee: 1,
+    marketingFee: 0,
 }
 const slippageTolerance = {
     minBuySlippage: 10,

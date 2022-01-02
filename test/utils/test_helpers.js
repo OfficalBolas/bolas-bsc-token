@@ -4,18 +4,19 @@ const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const BOLAS = artifacts.require('BOLAS');
+const BOLASDividendTracker = artifacts.require('BOLASDividendTracker');
 
 async function reinitializeTokenNoFees(accounts, account1Balance = 10000) {
-    const token = await BOLAS.new();
-    await token.initialize();
-    await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
+    const token = await reinitializeTokenWithFees(accounts, account1Balance)
     await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
     return token;
 }
 
 async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
     const token = await BOLAS.new();
-    await token.initialize();
+    const dividendTracker = await BOLASDividendTracker.new();
+    await dividendTracker.transferOwnership(token.address);
+    await token.initialize(dividendTracker.address);
     await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
     return token;
 }
