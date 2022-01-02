@@ -11,6 +11,8 @@ import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
+// Dividend tracker
+import "./DividendTracker/BOLASDividendTracker.sol";
 
 contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
 
@@ -79,6 +81,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     bool private _autoBurnEnabled;
     bool private _autoDividendEnabled;
 
+    // Dividend states
+    BOLASDividendTracker public dividendTracker;
+    uint256 public gasForProcessing = 150000; // processing auto-claiming dividends
+
     // Prevent reentrancy.
     modifier lockTheSwap {
         require(!_inSwapAndLiquify, "Currently in swap and liquify.");
@@ -124,6 +130,16 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event DisabledAutoSwapAndLiquify();
     event Airdrop(uint256 amount);
     event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
+    event UpdateDividendTracker(address indexed newAddress, address indexed oldAddress);
+    event ProcessedDividendTracker(
+        uint256 iterations,
+        uint256 claims,
+        uint256 lastProcessedIndex,
+        bool indexed automatic,
+        uint256 gas,
+        address indexed processor
+    );
+    event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
     function initialize() initializer public {
         __ERC20_init("BOLAS", "BOLAS");
@@ -248,6 +264,101 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function isExcludedFromFee(address account) external view returns (bool) {
         return _isExcludedFromFee[account];
+    }
+
+    // Dividend methods
+    function getLastProcessedIndex() external view returns (uint256) {
+        return dividendTracker.getLastProcessedIndex();
+    }
+
+    function getNumberOfDividendTokenHolders() external view returns (uint256) {
+        return dividendTracker.getNumberOfTokenHolders();
+    }
+
+    function getClaimWait() external view returns (uint256) {
+        return dividendTracker.claimWait();
+    }
+
+    function getTotalDividendsDistributed() external view returns (uint256) {
+        return dividendTracker.totalDividendsDistributed();
+    }
+
+    function isExcludedFromDividends(address account) public view returns (bool) {
+        return dividendTracker.isExcludedFromDividends(account);
+    }
+
+    function withdrawableDividendOf(address account) external view returns (uint256) {
+        return dividendTracker.withdrawableDividendOf(account);
+    }
+
+    function hasDividends(address account) external view returns (bool) {
+        (,int256 index, , , , , ,) = dividendTracker.getAccount(account);
+        return (index > - 1);
+    }
+
+    function getAccountDividendsInfo(address account)
+    external view returns (
+        address,
+        int256,
+        int256,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256) {
+        return dividendTracker.getAccount(account);
+    }
+
+    function getAccountDividendsInfoAtIndex(uint256 index)
+    external view returns (
+        address,
+        int256,
+        int256,
+        uint256,
+        uint256,
+        uint256,
+        uint256,
+        uint256) {
+        return dividendTracker.getAccountAtIndex(index);
+    }
+
+    function excludeFromDividends(address account, bool exclude) public onlyOwner {
+        dividendTracker.excludeFromDividends(account, exclude);
+    }
+
+    function updateDividendTracker(address newAddress) public onlyOwner {
+        require(newAddress != address(dividendTracker), "Tracker already has been set!");
+        BOLASDividendTracker newDividendTracker = BOLASDividendTracker(payable(newAddress));
+        require(newDividendTracker.owner() == address(this), "Tracker must be owned by token");
+        newDividendTracker.excludeFromDividends(address(newDividendTracker), true);
+        newDividendTracker.excludeFromDividends(address(this), true);
+        newDividendTracker.excludeFromDividends(owner(), true);
+        newDividendTracker.excludeFromDividends(burnAccount, true);
+        emit UpdateDividendTracker(newAddress, address(dividendTracker));
+        dividendTracker = newDividendTracker;
+    }
+
+    function updateGasForProcessing(uint256 newValue) external onlyOwner {
+        require(newValue != gasForProcessing, "Value has been assigned!");
+        emit GasForProcessingUpdated(newValue, gasForProcessing);
+        gasForProcessing = newValue;
+    }
+
+    function updateClaimWait(uint256 claimWait) external onlyOwner {
+        dividendTracker.updateClaimWait(claimWait);
+    }
+
+    function updateMinimumForDividends(uint256 amount) external onlyOwner {
+        dividendTracker.updateMinimumForDividends(amount);
+    }
+
+    function processDividendTracker(uint256 gas) external {
+        (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) = dividendTracker.process(gas);
+        emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);
+    }
+
+    function claim() external {
+        dividendTracker.processAccount(payable(msg.sender));
     }
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
