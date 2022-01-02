@@ -141,7 +141,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     );
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
 
-    function initialize() initializer public {
+    function initialize(address dividendTracker_) initializer public {
         __ERC20_init("BOLAS", "BOLAS");
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -149,6 +149,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // exclude owner and this contract from fee.
         excludeAccountFromFee(owner());
         excludeAccountFromFee(address(this));
+
+        // dividend
+        updateDividendTracker(dividendTracker_);
 
         // configure fees
         enableAutoBurn(6, 0);
@@ -334,6 +337,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         newDividendTracker.excludeFromDividends(address(this), true);
         newDividendTracker.excludeFromDividends(owner(), true);
         newDividendTracker.excludeFromDividends(burnAccount, true);
+        // todo exclude fee wallets from the dividend tracker
+        // newDividendTracker.excludeFromDividends(address(devAddress), true);
         emit UpdateDividendTracker(newAddress, address(dividendTracker));
         dividendTracker = newDividendTracker;
     }
