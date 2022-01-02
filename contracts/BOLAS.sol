@@ -42,11 +42,17 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Decimals of taxBurn. Used for have tax less than 1%.
     uint8 private _taxBurnDecimals;
 
+    // Decimals of taxDividend. Used for have tax less than 1%.
+    uint8 private _taxDividendDecimals;
+
     // Decimals of taxLiquify. Used for have tax less than 1%.
     uint8 private _taxLiquifyDecimals;
 
     // This percent of a transaction will be burnt.
     uint8 private _taxBurn;
+
+    // This percent of a transaction will be dividend.
+    uint8 private _taxDividend;
 
     // This percent of a transaction will be added to the liquidity pool. More details at https://github.com/Sheldenshi/ERC20Deflationary.
     uint8 private _taxLiquify;
@@ -71,6 +77,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     bool private _autoSwapAndLiquifyEnabled;
     bool private _autoBurnEnabled;
+    bool private _autoDividendEnabled;
 
     // Prevent reentrancy.
     modifier lockTheSwap {
@@ -86,6 +93,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 amount;
         // Amount tokens charged for burning.
         uint256 burnFee;
+        // Amount tokens charged for dividends.
+        uint256 dividendFee;
         // Amount tokens charged to add to liquidity.
         uint256 liquifyFee;
         // Amount tokens after fees.
@@ -97,6 +106,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     */
     event Burn(address from, uint256 amount);
     event TaxBurnUpdate(uint8 previousTax, uint8 previousDecimals, uint8 currentTax, uint8 currentDecimal);
+    event TaxDividendUpdate(uint8 previousTax, uint8 previousDecimals, uint8 currentTax, uint8 currentDecimal);
     event TaxLiquifyUpdate(uint8 previousTax, uint8 previousDecimals, uint8 currentTax, uint8 currentDecimal);
     event MinTokensBeforeSwapUpdated(uint256 previous, uint256 current);
     event SwapAndLiquify(
@@ -107,8 +117,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event ExcludeAccountFromFee(address account);
     event IncludeAccountInFee(address account);
     event EnabledAutoBurn();
+    event EnabledAutoDividend();
     event EnabledAutoSwapAndLiquify();
     event DisabledAutoBurn();
+    event DisabledAutoDividend();
     event DisabledAutoSwapAndLiquify();
     event Airdrop(uint256 amount);
     event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
@@ -124,7 +136,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // configure fees
         enableAutoBurn(6, 0);
-        enableAutoSwapAndLiquify(5, 0, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 1000000000000 * 10 ** decimals());
+        enableAutoDividend(3, 0);
+        enableAutoSwapAndLiquify(2, 0, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 1000000000000 * 10 ** decimals());
 
         // Add initial supply to sender
         _mint(msg.sender, 160000000000000 * 10 ** decimals());
@@ -333,6 +346,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         if (_autoBurnEnabled) {
             _balances[address(this)] += values.burnFee;
             _burn(address(this), values.burnFee);
+        }
+
+        // Dividend
+        if (_autoDividendEnabled) {
         }
 
         // Add to liquidity pool
@@ -546,6 +563,30 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
+     * @dev Enables the auto dividend feature.
+     * Dividend transaction amount * `taxDividend_` amount of tokens each transaction when enabled.
+     *
+     * Emits a {EnabledAutoDividend} event.
+     *
+     * Requirements:
+     *
+     * - auto dividend feature mush be disabled.
+     * - tax must be greater than 0.
+     * - tax decimals + 2 must be less than token decimals.
+     * (because tax rate is in percentage)
+     */
+    function enableAutoDividend(uint8 taxDividend_, uint8 taxDividendDecimals_) public onlyOwner {
+        require(!_autoDividendEnabled, "Auto dividend feature is already enabled.");
+        require(taxDividend_ > 0, "Tax must be greater than 0.");
+        require(taxDividendDecimals_ + 2 <= decimals(), "Tax decimals must be less than token decimals - 2");
+
+        _autoDividendEnabled = true;
+        setTaxDividend(taxDividend_, taxDividendDecimals_);
+
+        emit EnabledAutoDividend();
+    }
+
+    /**
       * @dev Enables the auto swap and liquify feature.
       * Swaps half of transaction amount * `taxLiquify_` amount of tokens
       * to ETH and pair with the other half of tokens to the LP each transaction when enabled.
@@ -611,6 +652,24 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     /**
+     * @dev Disables the auto dividend feature.
+     *
+     * Emits a {DisabledAutoDividend} event.
+     *
+     * Requirements:
+     *
+     * - auto dividend feature mush be enabled.
+     */
+    function disableAutoDividend() public onlyOwner {
+        require(_autoDividendEnabled, "Auto dividend feature is already disabled.");
+
+        setTaxDividend(0, 0);
+        _autoDividendEnabled = false;
+
+        emit DisabledAutoDividend();
+    }
+
+    /**
       * @dev Disables the auto swap and liquify feature.
       *
       * Emits a {DisabledAutoSwapAndLiquify} event.
@@ -658,7 +717,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxBurn(uint8 taxBurn_, uint8 taxBurnDecimals_) public onlyOwner {
         require(_autoBurnEnabled, "Auto burn feature must be enabled. Try the EnableAutoBurn function.");
-        require(taxBurn_ + _taxLiquify < 100, "Tax fee too high.");
+        require(taxBurn_ + _taxDividend + _taxLiquify < 100, "Tax fee too high.");
 
         uint8 previousTax = _taxBurn;
         uint8 previousDecimals = _taxBurnDecimals;
@@ -666,6 +725,28 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _taxBurnDecimals = taxBurnDecimals_;
 
         emit TaxBurnUpdate(previousTax, previousDecimals, taxBurn_, taxBurnDecimals_);
+    }
+
+    /**
+      * @dev Updates taxDividend
+      *
+      * Emits a {TaxDividendUpdate} event.
+      *
+      * Requirements:
+      *
+      * - auto dividend feature must be enabled.
+      * - total tax rate must be less than 100%.
+      */
+    function setTaxDividend(uint8 taxDividend_, uint8 taxDividendDecimals_) public onlyOwner {
+        require(_autoDividendEnabled, "Auto dividend feature must be enabled. Try the EnableAutoDividend function.");
+        require(_taxBurn + taxDividend_ + _taxLiquify < 100, "Tax fee too high.");
+
+        uint8 previousTax = _taxDividend;
+        uint8 previousDecimals = _taxDividendDecimals;
+        _taxDividend = taxDividend_;
+        _taxDividendDecimals = taxDividendDecimals_;
+
+        emit TaxDividendUpdate(previousTax, previousDecimals, taxDividend_, taxDividendDecimals_);
     }
 
     /**
@@ -680,7 +761,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxLiquify(uint8 taxLiquify_, uint8 taxLiquifyDecimals_) public onlyOwner {
         require(_autoSwapAndLiquifyEnabled, "Auto swap and liquify feature must be enabled. Try the EnableAutoSwapAndLiquify function.");
-        require(_taxBurn + taxLiquify_ < 100, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + taxLiquify_ < 100, "Tax fee too high.");
 
         uint8 previousTax = _taxLiquify;
         uint8 previousDecimals = _taxLiquifyDecimals;
