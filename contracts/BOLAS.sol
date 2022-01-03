@@ -451,15 +451,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         ValuesFromAmount memory values = _getValues(amount, _isExcludedFromFee[sender]);
 
-        uint256 senderBalance = _balances[sender];
-        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
-    unchecked {
-        _balances[sender] = senderBalance - amount;
-    }
-        _balances[recipient] += values.transferAmount;
-
-        emit Transfer(sender, recipient, values.transferAmount);
-
+        _processTransferSwaps();
         if (!_isExcludedFromFee[sender]) {
             _afterTokenTransfer(values);
         }
@@ -480,6 +472,20 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             try dividendTracker.process(gas) returns (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) {
                 emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, true, gas, tx.origin);
             } catch {}
+        }
+    }
+
+    function _processTransferSwaps(address sender, address recipient) internal {
+        if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled) {
+            uint256 contractTokenBalance = balanceOf(address(this));
+            // whether the current contract balances makes the threshold to swap and liquify.
+            bool overMinTokensBeforeSwap = contractBalance >= _minTokensBeforeSwap;
+
+            if (overMinTokensBeforeSwap && !automatedMarketMakerPairs[sender]) {
+                _inSwapAndLiquify = true;
+                swapAndSend(contractTokenBalance);
+                _inSwapAndLiquify = false;
+            }
         }
     }
 
