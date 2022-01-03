@@ -104,6 +104,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 dividendFee;
         // Amount tokens charged to add to liquidity.
         uint256 liquifyFee;
+        // Amount of total fee
+        uint256 totalFee;
         // Amount tokens after fees.
         uint256 transferAmount;
     }
@@ -449,12 +451,16 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             return;
         }
 
-        ValuesFromAmount memory values = _getValues(amount, _isExcludedFromFee[sender]);
-
-        _processTransferSwaps();
-        if (!_isExcludedFromFee[sender]) {
-            _afterTokenTransfer(values);
+        // process fees
+        bool takeFee = !_isExcludedFromFee[sender];
+        if (takeFee) {
+            ValuesFromAmount memory values = _getValues(amount, takeFee);
+            super._transfer(sender, address(this), values.totalFee);
         }
+
+        // process swaps
+        _processTransferSwaps(sender);
+
         // process dividends
         _processTransferDividends(sender, recipient);
     }
@@ -475,7 +481,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         }
     }
 
-    function _processTransferSwaps(address sender, address recipient) internal {
+    function _processTransferSwaps(address sender) internal {
         if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled) {
             uint256 contractTokenBalance = balanceOf(address(this));
             // whether the current contract balances makes the threshold to swap and liquify.
@@ -671,9 +677,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             values.burnFee = _calculateTax(values.amount, _taxBurn, _taxBurnDecimals);
             values.dividendFee = _calculateTax(values.amount, _taxDividend, _taxDividendDecimals);
             values.liquifyFee = _calculateTax(values.amount, _taxLiquify, _taxLiquifyDecimals);
+            values.totalFee = values.burnFee + values.dividendFee + values.liquifyFee;
 
             // amount after fee
-            values.transferAmount = values.amount - values.burnFee - values.dividendFee - values.liquifyFee;
+            values.transferAmount = values.amount - values.totalFee;
         }
 
         return values;
