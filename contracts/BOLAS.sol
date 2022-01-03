@@ -83,6 +83,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     // Dividend states
     BOLASDividendTracker public dividendTracker;
+    bool public isAutoDividendProcessing;
     uint256 public gasForProcessing = 150000; // processing auto-claiming dividends
 
     // Prevent reentrancy.
@@ -152,6 +153,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // dividend
         updateDividendTracker(dividendTracker_);
+        switchAutoDividendProcessing(true);
 
         // configure fees
         enableAutoBurn(6, 0);
@@ -366,6 +368,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         dividendTracker.processAccount(payable(msg.sender));
     }
 
+    function switchAutoDividendProcessing(bool enabled) external onlyOwner {
+        require(enabled != isAutoDividendProcessing, "already has been set!");
+        isAutoDividendProcessing = enabled;
+    }
+
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
      * the total supply.
      *
@@ -456,7 +463,24 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         if (!_isExcludedFromFee[sender]) {
             _afterTokenTransfer(values);
         }
+        // process dividends
+        _processTransferDividends(sender, recipient);
+    }
 
+    function _processTransferDividends(address sender, address recipient) internal {
+        uint256 fromBalance = balanceOf(sender);
+        uint256 toBalance = balanceOf(recipient);
+
+        dividendTracker.setBalance(payable(sender), fromBalance);
+        dividendTracker.setBalance(payable(recipient), toBalance);
+
+        if (!_inSwapAndLiquify && isAutoDividendProcessing) {
+            uint256 gas = gasForProcessing;
+
+            try dividendTracker.process(gas) returns (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) {
+                emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, true, gas, tx.origin);
+            } catch {}
+        }
     }
 
     /**
