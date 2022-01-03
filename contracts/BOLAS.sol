@@ -453,10 +453,13 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // process fees
         bool takeFee = !_isExcludedFromFee[sender];
+        ValuesFromAmount memory values = _getValues(amount, takeFee);
         if (takeFee) {
-            ValuesFromAmount memory values = _getValues(amount, takeFee);
             super._transfer(sender, address(this), values.totalFee);
         }
+
+        // send tokens to recipient
+        super._transfer(sender, recipient, values.transferAmount);
 
         // process swaps
         _processTransferSwaps(sender);
