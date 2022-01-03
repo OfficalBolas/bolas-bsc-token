@@ -437,6 +437,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
+        if (amount == 0) {
+            super._transfer(sender, recipient, 0);
+            return;
+        }
+
         ValuesFromAmount memory values = _getValues(amount, _isExcludedFromFee[sender]);
 
         uint256 senderBalance = _balances[sender];
