@@ -49,6 +49,10 @@ function rawToToken(rawAmount) {
     return new Big(rawAmount.toString()).div(new Big(10).pow(decimals)).toPrecision(decimals);
 }
 
+function rawToTokenNumber(rawAmount) {
+    return parseFloat(rawToToken(rawAmount));
+}
+
 function tokenToRaw(tokenAmount) {
     return new Big(tokenAmount).mul(new Big(10).pow(decimals)).toFixed(0);
 }
@@ -72,6 +76,7 @@ module.exports = {
     getMaximumAmountWithSlippage,
     rawToToken,
     tokenToRaw,
+    rawToTokenNumber,
     bigNumberEqual,
     assertBigNumberEqual,
 }

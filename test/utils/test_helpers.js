@@ -1,6 +1,5 @@
 const testUtils = require("./test_utils");
 const {tokenToRaw, rawToToken, getETHToTokenPath} = require("./test_utils");
-const Big = require("big.js");
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
@@ -34,6 +33,14 @@ async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidi
     await router.addLiquidityETH(
         token.address, tokenToRaw(liquidityTokenAmount), 0, 0, accounts[8], new Date().getTime() + 3600000,
         {from: accounts[0], value: testUtils.toWei(liquidityETHAmount)});
+}
+
+async function buyTokens(token, ethAmount, account) {
+    const routerAddress = await token.uniswapV2Router();
+    const router = await IUniswapV2Router02.at(routerAddress);
+    await router.swapExactETHForTokensSupportingFeeOnTransferTokens(
+        0, await testUtils.getETHToTokenPath(token, router), account, new Date().getTime() + 3600000,
+        {from: account, value: testUtils.toWei(ethAmount)});
 }
 
 function getTransferAmount(amount, config) {
@@ -77,4 +84,5 @@ module.exports = {
     reinitializeTokenWithFees,
     getTokenAmountForETH,
     setupLiquidity,
+    buyTokens,
 }
