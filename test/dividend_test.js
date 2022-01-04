@@ -16,7 +16,13 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         dividendTracker = await BOLASDividendTracker.at(await token.dividendTracker())
     });
 
-    // CREATION
+    // Dividend tracker tests
+    it('account[0] should be ignored from dividends, and account[1] should not be', async () => {
+        const account0Excluded = await token.isExcludedFromDividends(accounts[0])
+        const account1Excluded = await token.isExcludedFromDividends(accounts[1])
+        assert.equal(account0Excluded, true);
+        assert.equal(account1Excluded, false);
+    });
     it('should create an initial balance of 50000000 for the account[1]', async () => {
         const balance = await token.balanceOf(accounts[1])
         assertBigNumberEqual(balance, tokenToRaw(50000000))
@@ -25,6 +31,8 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         const minBalance = await dividendTracker.minimumTokenBalanceForDividends()
         assertBigNumberEqual(minBalance, tokenToRaw(1000))
     });
+
+    // Dividend tests before any swap
     it('Total token holders should be 1', async () => {
         const holderCount = await token.getNumberOfDividendTokenHolders()
         assertBigNumberEqual(holderCount, 1)
@@ -33,5 +41,13 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[0]})
         const holderCount = await token.getNumberOfDividendTokenHolders()
         assertBigNumberEqual(holderCount, 2)
+    });
+    it('Total dividends ETH distributed should be 0 because no swap yet', async () => {
+        const totalDistributed = await token.getTotalDividendsDistributed()
+        assertBigNumberEqual(totalDistributed, 0)
+    });
+    it('account[1] withdrawable dividend should be 0 because no swap yet', async () => {
+        const withdrawableDividends = await token.withdrawableDividendOf(accounts[1])
+        assertBigNumberEqual(withdrawableDividends, 0)
     });
 })
