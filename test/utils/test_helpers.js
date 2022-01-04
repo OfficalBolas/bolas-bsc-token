@@ -43,6 +43,15 @@ async function buyTokens(token, ethAmount, account) {
         {from: account, value: testUtils.toWei(ethAmount)});
 }
 
+async function sellTokens(token, tokenAmount, account) {
+    const routerAddress = await token.uniswapV2Router();
+    const router = await IUniswapV2Router02.at(routerAddress);
+    await token.approve(routerAddress, tokenToRaw(tokenAmount), {from: account});
+    await router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+        tokenToRaw(tokenAmount), 0, await testUtils.getTokenToETHPath(token, router), account, new Date().getTime() + 3600000,
+        {from: account});
+}
+
 function getTransferAmount(amount, config) {
     const taxAmount = amount * config.taxFee / 100;
     const liquidityAmount = amount * config.liquidityFee / 100;
@@ -85,4 +94,5 @@ module.exports = {
     getTokenAmountForETH,
     setupLiquidity,
     buyTokens,
+    sellTokens,
 }

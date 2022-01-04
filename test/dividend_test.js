@@ -5,7 +5,7 @@ const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const testHelpers = require('./utils/test_helpers');
 const {fees, slippageTolerance} = require("./config/token_config");
-const {assertBigNumberEqual, tokenToRaw, rawToToken, rawToTokenNumber} = require("./utils/test_utils");
+const {assertBigNumberEqual, tokenToRaw, rawToToken, rawToTokenNumber, getEthBalance} = require("./utils/test_utils");
 let token;
 let dividendTracker;
 
@@ -52,10 +52,16 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
 
     // Dividends tests after swap
-    it('Total token holders should be 1', async () => {
-        await testHelpers.buyTokens(token, 10, accounts[2], accounts);
+    it('Buying tokens for 10ETH should work', async () => {
+        await testHelpers.buyTokens(token, 10, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
         assert(balanceInTokens > 8_000_000 && balanceInTokens < 10_000_000);
+    });
+    it('Selling 4,000,000 tokens for ETH should work', async () => {
+        await testHelpers.sellTokens(token, 4_000_000, accounts[2]);
+        const balance = await token.balanceOf(accounts[2])
+        const balanceInTokens = rawToTokenNumber(balance);
+        assert(balanceInTokens > 4_000_000 && balanceInTokens < 6_000_000);
     });
 })
