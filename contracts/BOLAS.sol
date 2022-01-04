@@ -329,6 +329,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         newDividendTracker.excludeFromDividends(address(this), true);
         newDividendTracker.excludeFromDividends(owner(), true);
         newDividendTracker.excludeFromDividends(burnAccount, true);
+        if (_autoSwapAndLiquifyEnabled) {
+            newDividendTracker.excludeFromDividends(_uniswapV2Pair, true);
+            newDividendTracker.excludeFromDividends(address(uniswapV2Router), true);
+        }
         // todo exclude fee wallets from the dividend tracker
         // newDividendTracker.excludeFromDividends(address(devAddress), true);
         emit UpdateDividendTracker(newAddress, address(dividendTracker));
@@ -499,42 +503,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
                 _inSwapAndLiquify = false;
             }
         }
-    }
-
-    /**
-      * @dev Performs all the functionalities that are enabled.
-      */
-    function _afterTokenTransfer(ValuesFromAmount memory values) internal {
-        // Burn
-        if (_autoBurnEnabled) {
-            _balances[address(this)] += values.burnFee;
-            _burn(address(this), values.burnFee);
-        }
-
-        // Dividend
-        if (_autoDividendEnabled) {
-        }
-
-        // Add to liquidity pool
-        if (_autoSwapAndLiquifyEnabled) {
-            // add liquidity fee to this contract.
-            _balances[address(this)] += values.liquifyFee;
-
-            uint256 contractBalance = _balances[address(this)];
-
-            // whether the current contract balances makes the threshold to swap and liquify.
-            bool overMinTokensBeforeSwap = contractBalance >= _minTokensBeforeSwap;
-
-            if (overMinTokensBeforeSwap &&
-                !_inSwapAndLiquify &&
-                _msgSender() != _uniswapV2Pair &&
-                _autoSwapAndLiquifyEnabled
-            )
-            {
-                swapAndLiquify(contractBalance);
-            }
-        }
-
     }
 
     /**
@@ -815,12 +783,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // save router in the contract
         uniswapV2Router = _uniswapV2Router;
 
-        /*
-        // exclude uniswapV2Router from paying fees.
+        // exclude uniswapV2Router & pair from paying fees.
         excludeAccountFromFee(address(_uniswapV2Router));
-        // exclude WETH and this Token Pair from paying fees.
         excludeAccountFromFee(_uniswapV2Pair);
-        */
+        // exclude pair & router from dividend tracker
+        dividendTracker.excludeFromDividends(address(_uniswapV2Router), true);
+        dividendTracker.excludeFromDividends(_uniswapV2Pair, true);
 
         // enable
         _autoSwapAndLiquifyEnabled = true;
