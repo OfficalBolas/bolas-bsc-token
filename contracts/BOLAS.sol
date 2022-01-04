@@ -71,14 +71,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     bool public isAutoDividendProcessing;
     uint256 public gasForProcessing = 150000; // processing auto-claiming dividends
 
-    // Prevent reentrancy.
-    modifier lockTheSwap {
-        require(!_inSwapAndLiquify, "Currently in swap and liquify.");
-        _inSwapAndLiquify = true;
-        _;
-        _inSwapAndLiquify = false;
-    }
-
     // Return values of _getValues function.
     struct ValuesFromAmount {
         // Amount of tokens for to transfer.
@@ -563,37 +555,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function sendEth(address account, uint256 amount) private returns (bool) {
         (bool success,) = account.call{value : amount}("");
         return success;
-    }
-
-    /**
-     * @dev Swap half of contract's token balance for ETH,
-     * and pair it up with the other half to add to the
-     * liquidity pool.
-     *
-     * Emits {SwapAndLiquify} event indicating the amount of tokens swapped to eth,
-     * the amount of ETH added to the LP, and the amount of tokens added to the LP.
-     */
-    function swapAndLiquify(uint256 contractBalance) private lockTheSwap {
-        // Split the contract balance into two halves.
-        uint256 tokensToSwap = contractBalance / 2;
-        uint256 tokensAddToLiquidity = contractBalance - tokensToSwap;
-
-        // Contract's current ETH balance.
-        uint256 initialBalance = address(this).balance;
-
-        // Swap half of the tokens to ETH.
-        swapTokensForEth(tokensToSwap);
-
-        // Figure out the exact amount of tokens received from swapping.
-        uint256 ethAddToLiquify = address(this).balance - initialBalance;
-
-        // Add to the LP of this token and WETH pair (half ETH and half this token).
-        addLiquidity(ethAddToLiquify, tokensAddToLiquidity);
-
-        _totalETHLockedInLiquidity += address(this).balance - initialBalance;
-        _totalTokensLockedInLiquidity += contractBalance - balanceOf(address(this));
-
-        emit SwapAndLiquify(tokensToSwap, ethAddToLiquify, tokensAddToLiquidity);
     }
 
     /**
