@@ -29,11 +29,11 @@ async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
 async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidityTokenAmount = 50000000) {
     const routerAddress = await token.uniswapV2Router();
     const totalSupply = await token.totalSupply();
-    await token.approve(routerAddress, totalSupply, {from: accounts[1]});
+    await token.approve(routerAddress, totalSupply, {from: accounts[0]});
     const router = await IUniswapV2Router02.at(routerAddress);
     await router.addLiquidityETH(
-        token.address, tokenToRaw(liquidityTokenAmount), 0, 0, accounts[1], new Date().getTime() + 3600000,
-        {from: accounts[1], value: testUtils.toWei(liquidityETHAmount)});
+        token.address, tokenToRaw(liquidityTokenAmount), 0, 0, accounts[8], new Date().getTime() + 3600000,
+        {from: accounts[0], value: testUtils.toWei(liquidityETHAmount)});
 }
 
 function getTransferAmount(amount, config) {

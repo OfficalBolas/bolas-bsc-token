@@ -23,9 +23,9 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         assert.equal(account0Excluded, true);
         assert.equal(account1Excluded, false);
     });
-    it('should create an initial balance of 50000000 for the account[1]', async () => {
+    it('should create an initial balance of 100000000 for the account[1]', async () => {
         const balance = await token.balanceOf(accounts[1])
-        assertBigNumberEqual(balance, tokenToRaw(50000000))
+        assertBigNumberEqual(balance, tokenToRaw(100000000))
     });
     it('should have correct minimumTokenBalanceForDividends', async () => {
         const minBalance = await dividendTracker.minimumTokenBalanceForDividends()
