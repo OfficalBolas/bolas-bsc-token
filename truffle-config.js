@@ -11,13 +11,14 @@ module.exports = {
         },
         local: {
             // use the ganache command
-            // ganache-cli -f https://eth-mainnet.alchemyapi.io/v2/HDnpOSOi0m3ibwX1Lh1AtbSyggjFC1jW -l 80000000 --networkId 999 --defaultBalanceEther 10000
+            // ganache-cli -f https://eth-mainnet.alchemyapi.io/v2/HDnpOSOi0m3ibwX1Lh1AtbSyggjFC1jW -l 80000000 -g 100000 --networkId 1 --defaultBalanceEther 10000 --unlock 0xe1474359c74e78fa8387d9cb58f393693e378de3
             host: "127.0.0.1",
             port: 8545,
             network_id: 1,
             gas: 40000000,
-            gasPrice: 25000000000,
+            gasPrice: 150000,
             gasLimit: 70000000,
+            skipDryRun: true
         },
         testnet: {
             provider: () => new HDWalletProvider(mnemonic, `https://data-seed-prebsc-1-s1.binance.org:8545`),
