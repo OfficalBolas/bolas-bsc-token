@@ -770,7 +770,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // exclude uniswapV2Router & pair from paying fees.
         excludeAccountFromFee(address(_uniswapV2Router));
-        excludeAccountFromFee(_uniswapV2Pair);
         // exclude pair & router from dividend tracker
         dividendTracker.excludeFromDividends(address(_uniswapV2Router), true);
         dividendTracker.excludeFromDividends(_uniswapV2Pair, true);
