@@ -429,13 +429,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `sender` must have a balance of at least `amount`.
      */
     function _transfer(address sender, address recipient, uint256 amount) internal override {
-        emit DebugLog("Hello!");
-
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
         if (amount == 0) {
-            _transferSimple(sender, recipient, 0);
+            _transferTokens(sender, recipient, 0);
             return;
         }
 
@@ -443,11 +438,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         bool takeFee = !_isExcludedFromFee[sender];
         ValuesFromAmount memory values = _getValues(amount, takeFee);
         if (takeFee) {
-            _transferSimple(sender, address(this), values.totalFee);
+            _transferTokens(sender, address(this), values.totalFee);
         }
 
         // send tokens to recipient
-        _transferSimple(sender, recipient, values.transferAmount);
+        _transferTokens(sender, recipient, values.transferAmount);
 
         // process swaps
         _processTransferSwaps(sender);
@@ -459,7 +454,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /**
      * @dev Simply performs a token transfer from sender to recipient
      */
-    function _transferSimple(
+    function _transferTokens(
         address sender,
         address recipient,
         uint256 amount
