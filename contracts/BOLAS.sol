@@ -35,13 +35,13 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     address private constant burnAccount = 0x000000000000000000000000000000000000dEaD;
 
     // This percent of a transaction will be burnt.
-    uint8 private _taxBurn;
+    uint16 private _taxBurn;
 
     // This percent of a transaction will be dividend.
-    uint8 private _taxDividend;
+    uint16 private _taxDividend;
 
     // This percent of a transaction will be added to the liquidity pool. More details at https://github.com/Sheldenshi/ERC20Deflationary.
-    uint8 private _taxLiquify;
+    uint16 private _taxLiquify;
 
     // ERC20 Token Standard
     uint256 private _totalSupply;
@@ -94,13 +94,25 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 transferAmount;
     }
 
+    // Return ETH values of _getSwapValues function.
+    struct SwapValues {
+        // Amount of ETH for to transfer.
+        uint256 totalETHAmount;
+        // Amount ETH used for liquidity.
+        uint256 liquidityETHAmount;
+        // Amount of tokens used for liquidity.
+        uint256 liquidityTokenAmount;
+        // Amount ETH used for dividends.
+        uint256 dividendsETHAmount;
+    }
+
     /*
         Events
     */
     event Burn(address from, uint256 amount);
-    event TaxBurnUpdate(uint8 previousTax, uint8 currentTax);
-    event TaxDividendUpdate(uint8 previousTax, uint8 currentTax);
-    event TaxLiquifyUpdate(uint8 previousTax, uint8 currentTax);
+    event TaxBurnUpdate(uint16 previousTax, uint16 currentTax);
+    event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
+    event TaxLiquifyUpdate(uint16 previousTax, uint16 currentTax);
     event MinTokensBeforeSwapUpdated(uint256 previous, uint256 current);
     event SwapAndLiquify(
         uint256 tokensSwapped,
@@ -182,15 +194,22 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /**
      * @dev Returns the current burn tax.
      */
-    function taxBurn() public view returns (uint8) {
+    function taxBurn() public view returns (uint16) {
         return _taxBurn;
     }
 
     /**
      * @dev Returns the current liquify tax.
      */
-    function taxLiquify() public view returns (uint8) {
+    function taxLiquify() public view returns (uint16) {
         return _taxLiquify;
+    }
+
+    /**
+     * @dev Returns the current dividend tax.
+     */
+    function taxDividend() public view returns (uint16) {
+        return _taxDividend;
     }
 
     /**
@@ -460,9 +479,23 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             bool overMinTokensBeforeSwap = contractTokenBalance >= _minTokensBeforeSwap;
 
             if (overMinTokensBeforeSwap && !automatedMarketMakerPairs[sender]) {
+                // start and lock swap
                 _inSwapAndLiquify = true;
-                // todo implement swapping
-                // swapAndSend(contractTokenBalance);
+
+                uint256 totalTokensToSwap = _minTokensBeforeSwap;
+                // Contract's current ETH balance.
+                uint256 initialETHBalance = address(this).balance;
+                swapTokensForEth(totalTokensToSwap);
+                uint256 swappedETHAmount = address(this).balance - initialETHBalance;
+                SwapValues memory values = _getSwappableValues(totalTokensToSwap, swappedETHAmount);
+
+                // process adding liquidity
+                addLiquidity(values.liquidityETHAmount, values.liquidityTokenAmount);
+
+                // process sending dividends
+                sendEth(address(dividendTracker), values.dividendsETHAmount);
+
+                // end & unlock swap
                 _inSwapAndLiquify = false;
             }
         }
@@ -552,6 +585,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _isExcludedFromFee[account] = false;
 
         emit IncludeAccountInFee(account);
+    }
+
+    // Sends ETH into a specified account from this contract
+    function sendEth(address account, uint256 amount) private returns (bool) {
+        (bool success,) = account.call{value : amount}("");
+        return success;
     }
 
     /**
@@ -662,8 +701,39 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /**
      * @dev Returns fee based on `amount` and `taxRate`
      */
-    function _calculateTax(uint256 amount, uint8 tax) private pure returns (uint256) {
+    function _calculateTax(uint256 amount, uint16 tax) private pure returns (uint256) {
         return amount * tax / (10 ** 2) / (10 ** 2);
+    }
+
+    /**
+     * @dev Returns swappable fee amounts in ETH.
+     */
+    function _getSwappableValues(uint256 swappedTokenAmount, uint256 swappedETHAmount) private view returns (SwapValues memory) {
+        SwapValues memory values;
+        values.totalETHAmount = swappedETHAmount;
+        uint16 totalTax = _totalSwappableTax();
+
+        values.dividendsETHAmount = _calculateSwappableTax(swappedETHAmount, _taxDividend, totalTax);
+        values.liquidityETHAmount = _calculateSwappableTax(swappedETHAmount, _taxLiquify, totalTax);
+        values.liquidityTokenAmount = _calculateSwappableTax(swappedTokenAmount, _taxLiquify, totalTax);
+
+        return values;
+    }
+
+    /**
+     * @dev Returns ETH swap amount based on tax & total tax
+     */
+    function _calculateSwappableTax(uint256 amount, uint16 tax, uint16 totalTax) private pure returns (uint256) {
+        return (amount * tax) / totalTax;
+    }
+
+    /**
+      * @dev Returns swappable total fee (all fees that should be swapped)
+      * outputs 1% as 100, 1.5% as 150
+     */
+    function _totalSwappableTax() private view returns (uint16) {
+        // todo add marketing to this
+        return _taxLiquify + _taxDividend;
     }
 
     /*
@@ -681,7 +751,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - auto burn feature mush be disabled.
      * - tax must be greater than 0.
      */
-    function enableAutoBurn(uint8 taxBurn_) public onlyOwner {
+    function enableAutoBurn(uint16 taxBurn_) public onlyOwner {
         require(!_autoBurnEnabled, "Auto burn feature is already enabled.");
         require(taxBurn_ > 0, "Tax must be greater than 0.");
 
@@ -702,7 +772,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - auto dividend feature mush be disabled.
      * - tax must be greater than 0.
      */
-    function enableAutoDividend(uint8 taxDividend_) public onlyOwner {
+    function enableAutoDividend(uint16 taxDividend_) public onlyOwner {
         require(!_autoDividendEnabled, "Auto dividend feature is already enabled.");
         require(taxDividend_ > 0, "Tax must be greater than 0.");
 
@@ -724,7 +794,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       * - auto swap and liquify feature mush be disabled.
       * - tax must be greater than 0.
       */
-    function enableAutoSwapAndLiquify(uint8 taxLiquify_, address routerAddress, uint256 minTokensBeforeSwap_) public onlyOwner {
+    function enableAutoSwapAndLiquify(uint16 taxLiquify_, address routerAddress, uint256 minTokensBeforeSwap_) public onlyOwner {
         require(!_autoSwapAndLiquifyEnabled, "Auto swap and liquify feature is already enabled.");
         require(taxLiquify_ > 0, "Tax must be greater than 0.");
 
@@ -841,11 +911,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       * - auto burn feature must be enabled.
       * - total tax rate must be less than 100%.
       */
-    function setTaxBurn(uint8 taxBurn_) public onlyOwner {
+    function setTaxBurn(uint16 taxBurn_) public onlyOwner {
         require(_autoBurnEnabled, "Auto burn feature must be enabled. Try the EnableAutoBurn function.");
         require(taxBurn_ + _taxDividend + _taxLiquify < 10000, "Tax fee too high.");
 
-        uint8 previousTax = _taxBurn;
+        uint16 previousTax = _taxBurn;
         _taxBurn = taxBurn_;
 
         emit TaxBurnUpdate(previousTax, taxBurn_);
@@ -861,11 +931,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       * - auto dividend feature must be enabled.
       * - total tax rate must be less than 100%.
       */
-    function setTaxDividend(uint8 taxDividend_) public onlyOwner {
+    function setTaxDividend(uint16 taxDividend_) public onlyOwner {
         require(_autoDividendEnabled, "Auto dividend feature must be enabled. Try the EnableAutoDividend function.");
         require(_taxBurn + taxDividend_ + _taxLiquify < 10000, "Tax fee too high.");
 
-        uint8 previousTax = _taxDividend;
+        uint16 previousTax = _taxDividend;
         _taxDividend = taxDividend_;
 
         emit TaxDividendUpdate(previousTax, taxDividend_);
@@ -881,11 +951,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       * - auto swap and liquify feature must be enabled.
       * - total tax rate must be less than 100%.
       */
-    function setTaxLiquify(uint8 taxLiquify_) public onlyOwner {
+    function setTaxLiquify(uint16 taxLiquify_) public onlyOwner {
         require(_autoSwapAndLiquifyEnabled, "Auto swap and liquify feature must be enabled. Try the EnableAutoSwapAndLiquify function.");
         require(_taxBurn + _taxDividend + taxLiquify_ < 10000, "Tax fee too high.");
 
-        uint8 previousTax = _taxLiquify;
+        uint16 previousTax = _taxLiquify;
         _taxLiquify = taxLiquify_;
 
         emit TaxLiquifyUpdate(previousTax, taxLiquify_);
