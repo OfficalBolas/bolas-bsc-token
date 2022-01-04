@@ -435,7 +435,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
         if (amount == 0) {
-            super._transfer(sender, recipient, 0);
+            _transferSimple(sender, recipient, 0);
             return;
         }
 
@@ -443,17 +443,42 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         bool takeFee = !_isExcludedFromFee[sender];
         ValuesFromAmount memory values = _getValues(amount, takeFee);
         if (takeFee) {
-            super._transfer(sender, address(this), values.totalFee);
+            _transferSimple(sender, address(this), values.totalFee);
         }
 
         // send tokens to recipient
-        super._transfer(sender, recipient, values.transferAmount);
+        _transferSimple(sender, recipient, values.transferAmount);
 
         // process swaps
         _processTransferSwaps(sender);
 
         // process dividends
         _processTransferDividends(sender, recipient);
+    }
+
+    /**
+     * @dev Simply performs a token transfer from sender to recipient
+     */
+    function _transferSimple(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) internal {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        _beforeTokenTransfer(sender, recipient, amount);
+
+        uint256 senderBalance = _balances[sender];
+        require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
+    unchecked {
+        _balances[sender] = senderBalance - amount;
+    }
+        _balances[recipient] += amount;
+
+        emit Transfer(sender, recipient, amount);
+
+        _afterTokenTransfer(sender, recipient, amount);
     }
 
     function _processTransferDividends(address sender, address recipient) internal {
@@ -615,7 +640,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         ValuesFromAmount memory values;
         values.amount = amount;
 
-        if (deductTransferFee) {
+        if (!deductTransferFee) {
             values.transferAmount = values.amount;
         } else {
             // calculate fee
