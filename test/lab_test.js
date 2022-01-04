@@ -1,17 +1,19 @@
-const testUtils = require('./utils/test_utils');
-const testHelpers = require('./utils/test_helpers');
-const {assertBigNumberEqual, rawToToken} = require("./utils/test_utils");
+const {tokenToRaw} = require("./utils/test_utils");
+const BOLAS = artifacts.require('BOLAS')
+const BOLASDividendTracker = artifacts.require('BOLASDividendTracker')
+
 let token;
 
 contract('BOLAS LAB TEST', (accounts) => {
-    before(async () => {
-        token = await testHelpers.reinitializeTokenNoFees(accounts);
-    });
-
     // META DATA
-    it('creation: should create an initial balance of 10000 for the creator', async () => {
-        const balance = await token.balanceOf(accounts[1])
-        console.log(balance);
-        assertBigNumberEqual(rawToToken(balance), '10000')
+    it('Lab', async () => {
+        token = await BOLAS.new();
+        const dividendTracker = await BOLASDividendTracker.new();
+        await dividendTracker.transferOwnership(token.address);
+        await token.initialize(dividendTracker.address, {from: accounts[0]});
+        await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
+        console.log((await token.balanceOf(accounts[0])).toString());
+        console.log(tokenToRaw(1000));
+        await token.transfer(accounts[1], tokenToRaw(1000), {from: accounts[0]});
     })
 })
