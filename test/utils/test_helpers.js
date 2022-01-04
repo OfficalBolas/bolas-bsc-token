@@ -1,5 +1,6 @@
 const testUtils = require("./test_utils");
 const {tokenToRaw, rawToToken, getETHToTokenPath} = require("./test_utils");
+const Big = require("big.js");
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
@@ -23,6 +24,16 @@ async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
     await token.initialize(dividendTracker.address);
     await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
     return token;
+}
+
+async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidityTokenAmount = 50000000) {
+    const routerAddress = await token.uniswapV2Router();
+    const totalSupply = await token.totalSupply();
+    await token.approve(routerAddress, totalSupply, {from: accounts[1]});
+    const router = await IUniswapV2Router02.at(routerAddress);
+    await router.addLiquidityETH(
+        token.address, tokenToRaw(liquidityTokenAmount), 0, 0, accounts[1], new Date().getTime() + 3600000,
+        {from: accounts[1], value: testUtils.toWei(liquidityETHAmount)});
 }
 
 function getTransferAmount(amount, config) {
@@ -65,4 +76,5 @@ module.exports = {
     reinitializeTokenNoFees,
     reinitializeTokenWithFees,
     getTokenAmountForETH,
+    setupLiquidity,
 }
