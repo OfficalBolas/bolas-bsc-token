@@ -13,9 +13,10 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 // Dividend tracker
 import "./DividendTracker/BOLASDividendTracker.sol";
+import "./Common/StringUtils.sol";
 
 contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
-
+    using StringUtils for string;
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
 
@@ -109,6 +110,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /*
         Events
     */
+    event DebugLog(string message);
     event Burn(address from, uint256 amount);
     event TaxBurnUpdate(uint16 previousTax, uint16 currentTax);
     event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
@@ -435,6 +437,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `sender` must have a balance of at least `amount`.
      */
     function _transfer(address sender, address recipient, uint256 amount) internal override {
+        emit DebugLog("Hello!");
+
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
 
