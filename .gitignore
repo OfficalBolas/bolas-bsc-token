@@ -58,3 +58,4 @@ allFiredEvents
 cache
 artifacts
 .secret
+deployments/
