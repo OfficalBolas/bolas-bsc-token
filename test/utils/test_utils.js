@@ -1,5 +1,4 @@
 const Big = require('big.js');
-const {decimals} = require("../config/token_config");
 
 async function assertFailure(executor) {
     let threw = false;
@@ -46,7 +45,7 @@ function getMaximumAmountWithSlippage(amount, slippagePercent) {
 }
 
 function rawToToken(rawAmount) {
-    return new Big(rawAmount.toString()).div(new Big(10).pow(decimals)).toPrecision(decimals);
+    return new Big(rawAmount.toString()).div(new Big(10).pow(16)).toPrecision(16);
 }
 
 function rawToTokenNumber(rawAmount) {
@@ -54,7 +53,11 @@ function rawToTokenNumber(rawAmount) {
 }
 
 function tokenToRaw(tokenAmount) {
-    return new Big(tokenAmount).mul(new Big(10).pow(decimals)).toFixed(0);
+    return new Big(tokenAmount).mul(new Big(10).pow(16)).toFixed(0);
+}
+
+function percentToRaw(percent) {
+    return (percent * 100).toFixed(0);
 }
 
 function bigNumberEqual(a, b) {
@@ -79,4 +82,5 @@ module.exports = {
     rawToTokenNumber,
     bigNumberEqual,
     assertBigNumberEqual,
+    percentToRaw,
 }

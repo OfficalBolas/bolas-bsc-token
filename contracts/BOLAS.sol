@@ -52,6 +52,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // This percent list of a transaction will be used for app slots.
     uint16[6] private _taxApps;
 
+    uint16 private _totalTaxApps;
+
     // ERC20 Token Standard
     uint256 private _totalSupply;
 
@@ -116,6 +118,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event TaxBurnUpdate(uint16 previousTax, uint16 currentTax);
     event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
     event TaxLiquifyUpdate(uint16 previousTax, uint16 currentTax);
+    event TaxAppUpdate(uint8 index, uint16 previousTax, uint16 currentTax);
     event MinTokensBeforeSwapUpdated(uint256 previous, uint256 current);
     event SwapAndLiquify(
         uint256 tokensSwapped,
@@ -504,6 +507,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     function _processTokenFees(address sender, ValuesFromAmount memory values) internal {
         _transferTokens(sender, address(this), values.totalFeeIntoContract);
+        _transferTokens(sender, burnAccount, values.burnFee);
         _transferTokens(sender, _appsWallet, values.appFee);
     }
 
@@ -669,16 +673,16 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         if (!deductTransferFee) {
             values.transferAmount = values.amount;
         } else {
-            // calculate fee
-            values.burnFee = _calculateTax(values.amount, _taxBurn);
+            // fee to inside the contract
             values.dividendFee = _calculateTax(values.amount, _taxDividend);
             values.liquifyFee = _calculateTax(values.amount, _taxLiquify);
-            for (uint8 i = 0; i < 6; i++) {
-                values.appFee += _calculateTax(values.amount, _taxApps[i]);
-            }
-            values.totalFeeIntoContract = values.burnFee + values.dividendFee + values.liquifyFee;
+            values.totalFeeIntoContract = values.dividendFee + values.liquifyFee;
+
+            // fee to outside the contract
+            values.burnFee = _calculateTax(values.amount, _taxBurn);
+            values.appFee = _calculateTax(values.amount, _totalTaxApps);
             // amount after fee
-            values.transferAmount = values.amount - values.totalFeeIntoContract - values.appFee;
+            values.transferAmount = values.amount - values.totalFeeIntoContract - values.appFee - values.burnFee;
         }
 
         return values;
@@ -898,7 +902,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxBurn(uint16 taxBurn_) public onlyOwner {
         require(_autoBurnEnabled, "Auto burn feature must be enabled. Try the EnableAutoBurn function.");
-        require(taxBurn_ + _taxDividend + _taxLiquify < 10000, "Tax fee too high.");
+        require(taxBurn_ + _taxDividend + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxBurn;
         _taxBurn = taxBurn_;
@@ -918,7 +922,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxDividend(uint16 taxDividend_) public onlyOwner {
         require(_autoDividendEnabled, "Auto dividend feature must be enabled. Try the EnableAutoDividend function.");
-        require(_taxBurn + taxDividend_ + _taxLiquify < 10000, "Tax fee too high.");
+        require(_taxBurn + taxDividend_ + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxDividend;
         _taxDividend = taxDividend_;
@@ -938,12 +942,35 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxLiquify(uint16 taxLiquify_) public onlyOwner {
         require(_autoSwapAndLiquifyEnabled, "Auto swap and liquify feature must be enabled. Try the EnableAutoSwapAndLiquify function.");
-        require(_taxBurn + _taxDividend + taxLiquify_ < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + taxLiquify_ + _totalTaxApps < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxLiquify;
         _taxLiquify = taxLiquify_;
 
         emit TaxLiquifyUpdate(previousTax, taxLiquify_);
+    }
+
+    /**
+      * @dev Updates taxApp
+      *
+      * Emits a {TaxAppUpdate} event.
+      *
+      * Requirements:
+      *
+      * - auto swap and app feature must be enabled.
+      * - total tax rate must be less than 100%.
+      */
+    function setTaxApps(uint8 index, uint16 taxApp_) public onlyOwner {
+        uint16 previousTax = _taxApps[index];
+        _taxApps[index] = taxApp_;
+
+        _totalTaxApps = 0;
+        for (uint8 i = 0; i < 6; i++) {
+            _totalTaxApps += _taxApps[i];
+        }
+
+        require(_taxBurn + _taxDividend + taxApp_ + _totalTaxApps < 10000, "Tax fee too high.");
+        emit TaxAppUpdate(index, previousTax, taxApp_);
     }
 
     function updateAppsWallet(address newAddress) public onlyOwner {
