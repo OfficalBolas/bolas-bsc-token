@@ -40,8 +40,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Where app fee tokens are sent to. Used for BOLAS app rewards
     address private _appsWallet;
 
+    // Where marketing fee tokens are sent to.
+    address private _marketingWallet;
+
     // This percent of a transaction will be burnt.
     uint16 private _taxBurn;
+
+    // This percent of a transaction sent to marketing.
+    uint16 private _taxMarketing;
 
     // This percent of a transaction will be dividend.
     uint16 private _taxDividend;
@@ -87,6 +93,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 amount;
         // Amount tokens charged for burning.
         uint256 burnFee;
+        // Amount tokens charged for marketing.
+        uint256 marketingFee;
         // Amount tokens charged for dividends.
         uint256 dividendFee;
         // Amount tokens charged to add to liquidity.
@@ -117,6 +125,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event Burn(address from, uint256 amount);
     event TaxBurnUpdate(uint16 previousTax, uint16 currentTax);
     event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
+    event TaxMarketingUpdate(uint16 previousTax, uint16 currentTax);
     event TaxLiquifyUpdate(uint16 previousTax, uint16 currentTax);
     event TaxAppUpdate(uint8 index, uint16 previousTax, uint16 currentTax);
     event AllAppTaxUpdate(uint16[6] appFees);
@@ -147,8 +156,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     );
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
     event UpdateAppWallet(address indexed newAddress, address indexed oldAddress);
+    event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
 
-    function initialize(address dividendTracker_, address appWallet_) initializer public {
+    function initialize(address dividendTracker_, address appWallet_, address marketingWallet_) initializer public {
         __ERC20_init("BOLAS", "BOLAS");
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -162,6 +172,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // configure wallets
         updateAppsWallet(appWallet_);
+        updateMarketingWallet(marketingWallet_);
 
         // Add initial supply to sender
         _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
@@ -203,6 +214,13 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function taxBurn() public view returns (uint16) {
         return _taxBurn;
+    }
+
+    /**
+     * @dev Returns the current marketing tax.
+     */
+    function taxMarketing() public view returns (uint16) {
+        return _taxMarketing;
     }
 
     /**
@@ -506,6 +524,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function _processTokenFees(address sender, ValuesFromAmount memory values) internal {
         _transferTokens(sender, address(this), values.totalFeeIntoContract);
         _transferTokens(sender, burnAccount, values.burnFee);
+        _transferTokens(sender, _marketingWallet, values.marketingFee);
         _transferTokens(sender, _appsWallet, values.appFee);
     }
 
@@ -678,9 +697,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
             // fee to outside the contract
             values.burnFee = _calculateTax(values.amount, _taxBurn);
+            values.marketingFee = _calculateTax(values.amount, _taxMarketing);
             values.appFee = _calculateTax(values.amount, _totalTaxApps);
             // amount after fee
-            values.transferAmount = values.amount - values.totalFeeIntoContract - values.appFee - values.burnFee;
+            values.transferAmount =
+            values.amount - (values.totalFeeIntoContract + values.appFee + values.burnFee + values.marketingFee);
         }
 
         return values;
@@ -900,7 +921,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxBurn(uint16 taxBurn_) public onlyOwner {
         require(_autoBurnEnabled, "Auto burn feature must be enabled. Try the EnableAutoBurn function.");
-        require(taxBurn_ + _taxDividend + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
+        require(taxBurn_ + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxBurn;
         _taxBurn = taxBurn_;
@@ -920,12 +941,30 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxDividend(uint16 taxDividend_) public onlyOwner {
         require(_autoDividendEnabled, "Auto dividend feature must be enabled. Try the EnableAutoDividend function.");
-        require(_taxBurn + taxDividend_ + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
+        require(_taxBurn + taxDividend_ + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxDividend;
         _taxDividend = taxDividend_;
 
         emit TaxDividendUpdate(previousTax, taxDividend_);
+    }
+
+    /**
+      * @dev Updates taxMarketing
+      *
+      * Emits a {TaxMarketingUpdate} event.
+      *
+      * Requirements:
+      *
+      * - total tax rate must be less than 100%.
+      */
+    function setTaxMarketing(uint16 taxMarketing_) public onlyOwner {
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + taxMarketing_ < 10000, "Tax fee too high.");
+
+        uint16 previousTax = _taxMarketing;
+        _taxMarketing = taxMarketing_;
+
+        emit TaxMarketingUpdate(previousTax, taxMarketing_);
     }
 
     /**
@@ -940,7 +979,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       */
     function setTaxLiquify(uint16 taxLiquify_) public onlyOwner {
         require(_autoSwapAndLiquifyEnabled, "Auto swap and liquify feature must be enabled. Try the EnableAutoSwapAndLiquify function.");
-        require(_taxBurn + _taxDividend + taxLiquify_ + _totalTaxApps < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + taxLiquify_ + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxLiquify;
         _taxLiquify = taxLiquify_;
@@ -967,7 +1006,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             _totalTaxApps += _taxApps[i];
         }
 
-        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
         emit TaxAppUpdate(index, previousTax, taxApp_);
     }
 
@@ -988,7 +1027,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             _totalTaxApps += _taxApps[i];
         }
 
-        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
         emit AllAppTaxUpdate(_taxApps);
     }
 
@@ -996,6 +1035,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(newAddress != address(_appsWallet), "Same address already has been set!");
         emit UpdateAppWallet(newAddress, address(_appsWallet));
         _appsWallet = newAddress;
+    }
+
+    function updateMarketingWallet(address newAddress) public onlyOwner {
+        require(newAddress != address(_marketingWallet), "Same address already has been set!");
+        emit UpdateMarketingWallet(newAddress, address(_marketingWallet));
+        _marketingWallet = newAddress;
     }
 
     function _getNamed(address addressToGet) internal view returns (string memory){

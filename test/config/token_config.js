@@ -6,9 +6,9 @@ const uniswap = {
 }
 const fees = {
     dividendFee: 3,
-    liquidityFee: 2,
+    liquidityFee: 1,
     burnFee: 5,
-    marketingFee: 0,
+    marketingFee: 1,
     appFees: [0.5, 0.5, 0, 0, 0, 0],
 }
 const slippageTolerance = {
