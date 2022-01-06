@@ -150,7 +150,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // configure fees
         enableAutoBurn(600);
         enableAutoDividend(300);
-        enableAutoSwapAndLiquify(200, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 1_000_000 * 10 ** decimals());
+        enableAutoSwapAndLiquify(200, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 60_000_000 * 10 ** decimals());
 
         // Add initial supply to sender
         _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
