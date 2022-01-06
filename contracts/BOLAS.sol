@@ -165,8 +165,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         __Ownable_init();
         __UUPSUpgradeable_init();
 
-        // exclude owner and this contract from fee.
-        excludeAccountFromFee(owner());
+        // exclude this contract from fee.
         excludeAccountFromFee(address(this));
 
         // dividend
@@ -367,15 +366,17 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         require(newDividendTracker.owner() == address(this), "Tracker must be owned by token");
         newDividendTracker.excludeFromDividends(address(newDividendTracker), true);
         newDividendTracker.excludeFromDividends(address(this), true);
-        newDividendTracker.excludeFromDividends(owner(), true);
-        newDividendTracker.excludeFromDividends(burnAccount, true);
+        // exclude uniswap
         if (_autoSwapAndLiquifyEnabled) {
             newDividendTracker.excludeFromDividends(_uniswapV2Pair, true);
             newDividendTracker.excludeFromDividends(address(uniswapV2Router), true);
         }
         // exclude wallets
-        newDividendTracker.excludeFromDividends(address(_marketingWallet), true);
-        newDividendTracker.excludeFromDividends(address(_appsWallet), true);
+        newDividendTracker.excludeFromDividends(owner(), true);
+        newDividendTracker.excludeFromDividends(burnAccount, true);
+        if (_marketingWallet != address(0)) newDividendTracker.excludeFromDividends(_marketingWallet, true);
+        if (_appsWallet != address(0)) newDividendTracker.excludeFromDividends(_appsWallet, true);
+
         emit UpdateDividendTracker(newAddress, address(dividendTracker));
         dividendTracker = newDividendTracker;
     }
@@ -406,6 +407,16 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function switchAutoDividendProcessing(bool enabled) external onlyOwner {
         require(enabled != isAutoDividendProcessing, "already has been set!");
         isAutoDividendProcessing = enabled;
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal override {
+        super._transferOwnership(newOwner);
+        if (address(dividendTracker) != address(0)) dividendTracker.excludeFromDividends(newOwner, true);
+        excludeAccountFromFee(newOwner);
     }
 
     /** @dev Creates `amount` tokens and assigns them to `account`, increasing
@@ -1036,12 +1047,16 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     function updateAppsWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_appsWallet), "Same address already has been set!");
+        if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
+        if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
         emit UpdateAppWallet(newAddress, address(_appsWallet));
         _appsWallet = newAddress;
     }
 
     function updateMarketingWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_marketingWallet), "Same address already has been set!");
+        if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
+        if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
         emit UpdateMarketingWallet(newAddress, address(_marketingWallet));
         _marketingWallet = newAddress;
     }
