@@ -6,6 +6,7 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
 // UniSwap libs
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
@@ -13,8 +14,9 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 // Dividend tracker
 import "./DividendTracker/BOLASDividendTracker.sol";
-// Hardhat Utils
+// Utils
 import "hardhat/console.sol";
+import "./Common/StringUtils.sol";
 
 contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
     // Keeps track of balances for address.
@@ -911,5 +913,22 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _taxLiquify = taxLiquify_;
 
         emit TaxLiquifyUpdate(previousTax, taxLiquify_);
+    }
+
+    function _getNamed(address addressToGet) internal view returns (string memory){
+        if (addressToGet == address(this)) return 'BOLAS_CONTRACT';
+        if (addressToGet == address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D)) return 'UNISWAP_ROUTER';
+        if (addressToGet == address(0x70C5721db98a0d146dA58AD9846745c03f8f9E57)) return 'UNISWAP_PAIR';
+        if (addressToGet == address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266)) return 'ACCOUNT_0';
+        if (addressToGet == address(0x70997970C51812dc3A010C7d01b50e0d17dc79C8)) return 'ACCOUNT_1';
+        if (addressToGet == address(0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)) return 'ACCOUNT_2';
+        if (addressToGet == address(0x90F79bf6EB2c4f870365E785982E1f101E93b906)) return 'ACCOUNT_3';
+        if (addressToGet == address(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65)) return 'ACCOUNT_4';
+        if (addressToGet == address(0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc)) return 'ACCOUNT_5';
+        if (addressToGet == address(0x976EA74026E726554dB657fA54763abd0C3a0aa9)) return 'ACCOUNT_6';
+        if (addressToGet == address(0x14dC79964da2C08b23698B3D3cc7Ca32193d9955)) return 'ACCOUNT_7';
+        if (addressToGet == address(0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f)) return 'ACCOUNT_8';
+        if (addressToGet == address(0xa0Ee7A142d267C1f36714E4a8F75612F20a79720)) return 'ACCOUNT_9';
+        return StringUtils.addressToAsciiString(addressToGet);
     }
 }
