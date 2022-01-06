@@ -119,6 +119,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
     event TaxLiquifyUpdate(uint16 previousTax, uint16 currentTax);
     event TaxAppUpdate(uint8 index, uint16 previousTax, uint16 currentTax);
+    event AllAppTaxUpdate(uint16[6] appFees);
     event MinTokensBeforeSwapUpdated(uint256 previous, uint256 current);
     event SwapAndLiquify(
         uint256 tokensSwapped,
@@ -159,10 +160,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // dividend
         updateDividendTracker(dividendTracker_);
 
-        // configure fees
-        enableAutoBurn(600);
-        enableAutoDividend(300);
-        enableAutoSwapAndLiquify(200, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 60_000_000 * 10 ** decimals());
+        // configure wallets
         updateAppsWallet(appWallet_);
 
         // Add initial supply to sender
@@ -969,8 +967,29 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             _totalTaxApps += _taxApps[i];
         }
 
-        require(_taxBurn + _taxDividend + taxApp_ + _totalTaxApps < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
         emit TaxAppUpdate(index, previousTax, taxApp_);
+    }
+
+    /**
+     * @dev Sets all app fees at once.
+      *
+      * Emits a {AllAppTaxUpdate} event.
+      */
+    function setAllTaxApps(
+        uint16[6] calldata fees
+    ) public onlyOwner {
+        for (uint256 i = 0; i < 6; i++) {
+            _taxApps[i] = fees[i];
+        }
+
+        _totalTaxApps = 0;
+        for (uint8 i = 0; i < 6; i++) {
+            _totalTaxApps += _taxApps[i];
+        }
+
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps < 10000, "Tax fee too high.");
+        emit AllAppTaxUpdate(_taxApps);
     }
 
     function updateAppsWallet(address newAddress) public onlyOwner {

@@ -62,7 +62,7 @@ async function sellTokens(token, tokenAmount, account) {
 }
 
 function getTransferAmount(amount, config) {
-    const taxAmount = amount * config.taxFee / 100;
+    const taxAmount = amount * config.dividendFee / 100;
     const liquidityAmount = amount * config.liquidityFee / 100;
     const burnAmount = amount * config.burnFee / 100;
     const marketingAmount = amount * config.marketingFee / 100;
