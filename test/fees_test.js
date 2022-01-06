@@ -1,11 +1,13 @@
-const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
 const {fees} = require("./config/token_config");
-const {assertBigNumberEqual, tokenToRaw, percentToRaw} = require("./utils/test_utils");
+const {assertBigNumberEqual, tokenToRaw, percentToRaw, getEthBalance} = require("./utils/test_utils");
+const {getNamedAccounts} = require("hardhat");
+let namedAccounts;
 let token;
 
 contract('BOLAS FEES TEST', (accounts) => {
     before(async () => {
+        namedAccounts = await getNamedAccounts();
         token = await testHelpers.reinitializeTokenWithFees(accounts);
     })
 
@@ -36,17 +38,21 @@ contract('BOLAS FEES TEST', (accounts) => {
         assertBigNumberEqual(balance, tokenToRaw(10000))
     })
 
-    // APP SLOTS
-    it('app slots: app taxes should be correctly initialized', async () => {
+    // Isolated fees
+    it('isolated fees: app taxes should be correctly initialized', async () => {
         const appTaxList = await token.taxApps();
         for (let i = 0; i < 6; i++) {
             assertBigNumberEqual(appTaxList[i], percentToRaw(fees.appFees[i]));
         }
-    })
-    it('app slots: should change single app tax slot', async () => {
+    });
+    it('isolated fees: should change single app tax slot', async () => {
         const percentToSet = 5;
         await token.setTaxApps(2, percentToRaw(percentToSet))
         const appTax = await token.taxAppOf(2);
         assertBigNumberEqual(appTax, percentToRaw(percentToSet));
-    })
+    });
+    it('isolated fees: marketing taxes should be correctly initialized', async () => {
+        const marketingTax = await token.taxMarketing();
+        assertBigNumberEqual(marketingTax, percentToRaw(fees.marketingFee));
+    });
 })

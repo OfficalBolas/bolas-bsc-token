@@ -117,6 +117,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 liquidityTokenAmount;
         // Amount ETH used for dividends.
         uint256 dividendsETHAmount;
+        // Amount ETH used for marketing.
+        uint256 marketingETHAmount;
     }
 
     /*
@@ -524,8 +526,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     function _processTokenFees(address sender, ValuesFromAmount memory values) internal {
         _transferTokens(sender, address(this), values.totalFeeIntoContract);
         _transferTokens(sender, burnAccount, values.burnFee);
-        _transferTokens(sender, _marketingWallet, values.marketingFee);
-        _transferTokens(sender, _appsWallet, values.appFee);
     }
 
     function _processTransferDividends(address sender, address recipient) internal {
@@ -566,6 +566,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
                 // process sending dividends
                 sendEth(address(dividendTracker), values.dividendsETHAmount);
+
+                // process sending marketing fee
+                sendEth(_marketingWallet, values.marketingETHAmount);
 
                 // end & unlock swap
                 _inSwapAndLiquify = false;
@@ -693,15 +696,15 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             // fee to inside the contract
             values.dividendFee = _calculateTax(values.amount, _taxDividend);
             values.liquifyFee = _calculateTax(values.amount, _taxLiquify);
-            values.totalFeeIntoContract = values.dividendFee + values.liquifyFee;
+            values.marketingFee = _calculateTax(values.amount, _taxMarketing);
+            values.totalFeeIntoContract = values.dividendFee + values.liquifyFee + values.marketingFee;
 
             // fee to outside the contract
             values.burnFee = _calculateTax(values.amount, _taxBurn);
-            values.marketingFee = _calculateTax(values.amount, _taxMarketing);
             values.appFee = _calculateTax(values.amount, _totalTaxApps);
             // amount after fee
             values.transferAmount =
-            values.amount - (values.totalFeeIntoContract + values.appFee + values.burnFee + values.marketingFee);
+            values.amount - (values.totalFeeIntoContract + values.appFee + values.burnFee);
         }
 
         return values;
@@ -723,6 +726,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint16 totalTax = _totalSwappableTax();
 
         values.dividendsETHAmount = _calculateSwappableTax(swappedETHAmount, _taxDividend, totalTax);
+        values.marketingETHAmount = _calculateSwappableTax(swappedETHAmount, _taxMarketing, totalTax);
         values.liquidityETHAmount = _calculateSwappableTax(swappedETHAmount, _taxLiquify, totalTax);
         values.liquidityTokenAmount = _calculateSwappableTax(swappedTokenAmount, _taxLiquify, totalTax);
 
@@ -741,8 +745,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
       * outputs 1% as 100, 1.5% as 150
      */
     function _totalSwappableTax() private view returns (uint16) {
-        // todo add marketing to this
-        return _taxLiquify + _taxDividend;
+        return _taxLiquify + _taxDividend + _taxMarketing;
     }
 
     /*

@@ -1,4 +1,6 @@
 const Big = require('big.js');
+const {ethers, waffle} = require("hardhat");
+const provider = waffle.provider;
 
 async function assertFailure(executor) {
     let threw = false;
@@ -33,7 +35,7 @@ function fromWei(weiAmount) {
 }
 
 function getEthBalance(accountAddress) {
-    return web3.eth.getBalance(accountAddress);
+    return provider.getBalance(accountAddress)
 }
 
 function getMinimumAmountWithSlippage(amount, slippagePercent) {

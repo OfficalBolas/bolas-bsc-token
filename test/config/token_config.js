@@ -8,7 +8,7 @@ const fees = {
     dividendFee: 3,
     liquidityFee: 1,
     burnFee: 5,
-    marketingFee: 1,
+    marketingFee: 2,
     appFees: [0.5, 0.5, 0, 0, 0, 0],
 }
 const slippageTolerance = {
