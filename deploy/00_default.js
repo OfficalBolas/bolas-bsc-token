@@ -3,7 +3,7 @@ const IterableMapping = 'IterableMapping'
 const BOLASDividendTracker = 'BOLASDividendTracker'
 module.exports = async ({getNamedAccounts, deployments}) => {
     const {deploy, execute, get} = deployments;
-    const {deployer} = await getNamedAccounts();
+    const {deployer, appWallet} = await getNamedAccounts();
     // deploy IterableMapping
     const iterableMapping = await deploy(IterableMapping, {from: deployer});
     // deploy BOLASDividendTracker
@@ -16,6 +16,6 @@ module.exports = async ({getNamedAccounts, deployments}) => {
 
     // initialize contract
     await execute(BOLASDividendTracker, {from: deployer}, 'transferOwnership', bolas.address);
-    await execute(BOLAS, {from: deployer}, 'initialize', dividendTracker.address);
+    await execute(BOLAS, {from: deployer}, 'initialize', dividendTracker.address, appWallet);
 };
 module.exports.tags = [BOLAS];

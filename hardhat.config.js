@@ -10,6 +10,7 @@ module.exports = {
     namedAccounts: {
         deployer: 0,
         tokenOwner: 1,
+        appWallet: 9,
     },
     networks: {
         hardhat: {

@@ -37,6 +37,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Where burnt tokens are sent to. This is an address that no one can have accesses to.
     address private constant burnAccount = 0x000000000000000000000000000000000000dEaD;
 
+    // Where app fee tokens are sent to. Used for BOLAS app rewards
+    address private _appsWallet;
+
     // This percent of a transaction will be burnt.
     uint16 private _taxBurn;
 
@@ -45,6 +48,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     // This percent of a transaction will be added to the liquidity pool. More details at https://github.com/Sheldenshi/ERC20Deflationary.
     uint16 private _taxLiquify;
+
+    // This percent list of a transaction will be used for app slots.
+    uint16[6] private _taxApps;
 
     // ERC20 Token Standard
     uint256 private _totalSupply;
@@ -83,8 +89,10 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 dividendFee;
         // Amount tokens charged to add to liquidity.
         uint256 liquifyFee;
+        // Amount of tokens charged for apps.
+        uint256 appFee;
         // Amount of total fee
-        uint256 totalFee;
+        uint256 totalFeeIntoContract;
         // Amount tokens after fees.
         uint256 transferAmount;
     }
@@ -134,8 +142,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         address indexed processor
     );
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
+    event UpdateAppWallet(address indexed newAddress, address indexed oldAddress);
 
-    function initialize(address dividendTracker_) initializer public {
+    function initialize(address dividendTracker_, address appWallet_) initializer public {
         __ERC20_init("BOLAS", "BOLAS");
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -151,6 +160,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         enableAutoBurn(600);
         enableAutoDividend(300);
         enableAutoSwapAndLiquify(200, 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D, 60_000_000 * 10 ** decimals());
+        updateAppsWallet(appWallet_);
 
         // Add initial supply to sender
         _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
@@ -192,6 +202,20 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function taxBurn() public view returns (uint16) {
         return _taxBurn;
+    }
+
+    /**
+     * @dev Returns the app tax of index.
+     */
+    function taxAppOf(uint8 index) public view returns (uint16) {
+        return _taxApps[index];
+    }
+
+    /**
+     * @dev Returns all app tax values
+     */
+    function taxApps() public view returns (uint16[6] memory) {
+        return _taxApps;
     }
 
     /**
@@ -440,7 +464,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         bool takeFee = !_isExcludedFromFee[sender];
         ValuesFromAmount memory values = _getValues(amount, takeFee);
         if (takeFee) {
-            _transferTokens(sender, address(this), values.totalFee);
+            _processTokenFees(sender, values);
         }
 
         // send tokens to recipient
@@ -476,6 +500,11 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         emit Transfer(sender, recipient, amount);
 
         _afterTokenTransfer(sender, recipient, amount);
+    }
+
+    function _processTokenFees(address sender, ValuesFromAmount memory values) internal {
+        _transferTokens(sender, address(this), values.totalFeeIntoContract);
+        _transferTokens(sender, _appsWallet, values.appFee);
     }
 
     function _processTransferDividends(address sender, address recipient) internal {
@@ -644,10 +673,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             values.burnFee = _calculateTax(values.amount, _taxBurn);
             values.dividendFee = _calculateTax(values.amount, _taxDividend);
             values.liquifyFee = _calculateTax(values.amount, _taxLiquify);
-            values.totalFee = values.burnFee + values.dividendFee + values.liquifyFee;
-
+            for (uint8 i = 0; i < 6; i++) {
+                values.appFee += _calculateTax(values.amount, _taxApps[i]);
+            }
+            values.totalFeeIntoContract = values.burnFee + values.dividendFee + values.liquifyFee;
             // amount after fee
-            values.transferAmount = values.amount - values.totalFee;
+            values.transferAmount = values.amount - values.totalFeeIntoContract - values.appFee;
         }
 
         return values;
@@ -913,6 +944,12 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _taxLiquify = taxLiquify_;
 
         emit TaxLiquifyUpdate(previousTax, taxLiquify_);
+    }
+
+    function updateAppsWallet(address newAddress) public onlyOwner {
+        require(newAddress != address(_appsWallet), "Same address already has been set!");
+        emit UpdateAppWallet(newAddress, address(_appsWallet));
+        _appsWallet = newAddress;
     }
 
     function _getNamed(address addressToGet) internal view returns (string memory){
