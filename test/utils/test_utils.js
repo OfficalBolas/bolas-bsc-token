@@ -47,7 +47,7 @@ function getMaximumAmountWithSlippage(amount, slippagePercent) {
 }
 
 function rawToToken(rawAmount) {
-    return new Big(rawAmount.toString()).div(new Big(10).pow(16)).toPrecision(16);
+    return new Big(rawAmount.toString()).div(new Big(10).pow(18)).toPrecision(18);
 }
 
 function rawToTokenNumber(rawAmount) {
@@ -55,7 +55,7 @@ function rawToTokenNumber(rawAmount) {
 }
 
 function tokenToRaw(tokenAmount) {
-    return new Big(tokenAmount).mul(new Big(10).pow(16)).toFixed(0);
+    return new Big(tokenAmount).mul(new Big(10).pow(18)).toFixed(0);
 }
 
 function percentToRaw(percent) {

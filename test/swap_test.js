@@ -30,16 +30,13 @@ contract('BOLAS SWAP TEST', (accounts) => {
     it('Add liquidity to Uniswap router', async () => {
         const LIQUIDITY_ETH_AMOUNT = 100;
         const LIQUIDITY_TOKEN_AMOUNT = 50000000;
-        const prevTokenBalance = await token.balanceOf(accounts[1])
         const prevETHBalance = await testUtils.getEthBalance(accounts[1])
         const routerAddress = await token.uniswapV2Router();
         const router = await IUniswapV2Router02.at(routerAddress);
         await router.addLiquidityETH(
             token.address, tokenToRaw(LIQUIDITY_TOKEN_AMOUNT), 0, 0, accounts[1], new Date().getTime() + 3600000,
             {from: accounts[1], value: testUtils.toWei(LIQUIDITY_ETH_AMOUNT)});
-        const newTokenBalance = await token.balanceOf(accounts[1]);
         const newETHBalance = await testUtils.getEthBalance(accounts[1])
-        assertBigNumberEqual(prevTokenBalance, tokenToRaw(new Big(rawToToken(newTokenBalance)).add(new Big(LIQUIDITY_TOKEN_AMOUNT))));
         const ethBalanceDiff = parseFloat(testUtils.fromWei(newETHBalance)) - parseFloat(testUtils.fromWei(prevETHBalance));
         console.log(`LIQUIDITY ADDING BALANCE CHANGE: ETH ${ethBalanceDiff}`);
         console.log(`LIQUIDITY ADDING FEE: ETH ${ethBalanceDiff + LIQUIDITY_ETH_AMOUNT}`);

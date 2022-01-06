@@ -178,7 +178,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // Add initial supply to sender
         _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
-        console.log('>> Token is initialized');
     }
 
     function _authorizeUpgrade(address newImplementation)

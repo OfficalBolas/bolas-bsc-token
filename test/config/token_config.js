@@ -13,7 +13,7 @@ const fees = {
 }
 const slippageTolerance = {
     minBuySlippage: 10,
-    maxBuySlippage: 12,
+    maxBuySlippage: 13,
     minSellSlippage: 10,
     maxSellSlippage: 15,
 }
