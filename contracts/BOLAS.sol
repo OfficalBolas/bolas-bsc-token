@@ -373,8 +373,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             newDividendTracker.excludeFromDividends(_uniswapV2Pair, true);
             newDividendTracker.excludeFromDividends(address(uniswapV2Router), true);
         }
-        // todo exclude fee wallets from the dividend tracker
-        // newDividendTracker.excludeFromDividends(address(devAddress), true);
+        // exclude wallets
+        newDividendTracker.excludeFromDividends(address(_marketingWallet), true);
+        newDividendTracker.excludeFromDividends(address(_appsWallet), true);
         emit UpdateDividendTracker(newAddress, address(dividendTracker));
         dividendTracker = newDividendTracker;
     }
