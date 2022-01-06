@@ -5,22 +5,21 @@ const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const BOLAS = artifacts.require('BOLAS');
 const BOLASDividendTracker = artifacts.require('BOLASDividendTracker');
+const {deployments} = require('hardhat');
 
 async function reinitializeTokenNoFees(accounts, account1Balance = 10000) {
-    const token = await BOLAS.new();
-    const dividendTracker = await BOLASDividendTracker.new();
-    await dividendTracker.transferOwnership(token.address);
-    await token.initialize(dividendTracker.address);
+    await deployments.fixture(['BOLAS']);
+    const tokenDep = await deployments.get('BOLAS');
+    const token = await BOLAS.at(tokenDep.address);
     await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
     await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
     return token;
 }
 
 async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
-    const token = await BOLAS.new();
-    const dividendTracker = await BOLASDividendTracker.new();
-    await dividendTracker.transferOwnership(token.address);
-    await token.initialize(dividendTracker.address);
+    await deployments.fixture(['BOLAS']);
+    const tokenDep = await deployments.get('BOLAS');
+    const token = await BOLAS.at(tokenDep.address);
     await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
     return token;
 }
