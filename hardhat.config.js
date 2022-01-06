@@ -4,6 +4,7 @@
 require('@nomiclabs/hardhat-waffle');
 require("@nomiclabs/hardhat-truffle5");
 require('hardhat-deploy');
+const {forking} = require("./test/config/network_config");
 
 module.exports = {
     namedAccounts: {
@@ -14,11 +15,7 @@ module.exports = {
         hardhat: {
             chainId: 999,
             loggingEnabled: false,
-            forking: {
-                url: 'https://eth-mainnet.alchemyapi.io/v2/HDnpOSOi0m3ibwX1Lh1AtbSyggjFC1jW',
-                blockNumber: 13948000,
-                enabled: true,
-            }
+            forking: forking,
         }
     },
     solidity: {
@@ -29,5 +26,8 @@ module.exports = {
                 runs: 200
             }
         }
+    },
+    mocha: {
+        timeout: 200000
     },
 };

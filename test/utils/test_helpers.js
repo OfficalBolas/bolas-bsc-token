@@ -5,9 +5,18 @@ const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const BOLAS = artifacts.require('BOLAS');
 const BOLASDividendTracker = artifacts.require('BOLASDividendTracker');
-const {deployments} = require('hardhat');
+const {deployments, network} = require('hardhat');
+const {forking} = require("../config/network_config");
+
+async function resetNetwork() {
+    await network.provider.request({
+        method: "hardhat_reset",
+        params: [{forking: {jsonRpcUrl: forking.url, blockNumber: forking.blockNumber}},],
+    });
+}
 
 async function reinitializeTokenNoFees(accounts, account1Balance = 10000) {
+    await resetNetwork();
     await deployments.fixture(['BOLAS']);
     const tokenDep = await deployments.get('BOLAS');
     const token = await BOLAS.at(tokenDep.address);
@@ -17,6 +26,7 @@ async function reinitializeTokenNoFees(accounts, account1Balance = 10000) {
 }
 
 async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
+    await resetNetwork();
     await deployments.fixture(['BOLAS']);
     const tokenDep = await deployments.get('BOLAS');
     const token = await BOLAS.at(tokenDep.address);
