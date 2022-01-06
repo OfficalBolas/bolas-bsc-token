@@ -6,7 +6,6 @@ import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 // UniSwap libs
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
@@ -14,10 +13,8 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 // Dividend tracker
 import "./DividendTracker/BOLASDividendTracker.sol";
-import "./Common/StringUtils.sol";
 
 contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
-    using StringUtils for string;
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
 
@@ -103,7 +100,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /*
         Events
     */
-    event DebugLog(string message);
     event Burn(address from, uint256 amount);
     event TaxBurnUpdate(uint16 previousTax, uint16 currentTax);
     event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
