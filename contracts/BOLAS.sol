@@ -43,6 +43,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     // Where marketing fee tokens are sent to.
     address private _marketingWallet;
 
+    // Where liquidity tokens are sent to.
+    address private _liquidityWallet;
+
     // This percent of a transaction will be burnt.
     uint16 private _taxBurn;
 
@@ -109,12 +112,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
     // Return ETH values of _getSwapValues function.
     struct SwapValues {
-        // Amount of ETH for to transfer.
-        uint256 totalETHAmount;
         // Amount ETH used for liquidity.
         uint256 liquidityETHAmount;
-        // Amount of tokens used for liquidity.
-        uint256 liquidityTokenAmount;
         // Amount ETH used for dividends.
         uint256 dividendsETHAmount;
         // Amount ETH used for marketing.
@@ -159,8 +158,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
     event UpdateAppWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
+    event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
 
-    function initialize(address dividendTracker_, address appWallet_, address marketingWallet_) initializer public {
+    function initialize(address dividendTracker_, address appWallet_, address marketingWallet_, address liquidityWallet_) initializer public {
         __ERC20_init("BOLAS", "BOLAS");
         __Ownable_init();
         __UUPSUpgradeable_init();
@@ -174,6 +174,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // configure wallets
         updateAppsWallet(appWallet_);
         updateMarketingWallet(marketingWallet_);
+        updateLiquidityWallet(liquidityWallet_);
 
         // Add initial supply to sender
         _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
@@ -503,7 +504,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         _transferTokens(sender, recipient, values.transferAmount);
 
         // process swaps
-        _processTransferSwaps(sender);
+        _processTransferSwaps(sender, recipient);
 
         // process dividends
         _processTransferDividends(sender, recipient);
@@ -555,8 +556,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         }
     }
 
-    function _processTransferSwaps(address sender) internal {
-        if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled) {
+    function _processTransferSwaps(address sender, address recipient) internal {
+        if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled && sender != _liquidityWallet && recipient != _liquidityWallet) {
             uint256 contractTokenBalance = balanceOf(address(this));
             // whether the current contract balances makes the threshold to swap and liquify.
             bool overMinTokensBeforeSwap = contractTokenBalance >= _minTokensBeforeSwap;
@@ -565,15 +566,18 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
                 // start and lock swap
                 _inSwapAndLiquify = true;
 
-                uint256 totalTokensToSwap = _minTokensBeforeSwap;
+                uint256 totalTokensForLiquidity = _minTokensBeforeSwap * _taxLiquify / _totalSwappableTax();
+                uint256 liquidityTokenHalfAsETH = totalTokensForLiquidity / 2;
+                uint256 liquidityTokenHalfAsBOLAS = totalTokensForLiquidity - liquidityTokenHalfAsETH;
+                uint256 totalTokensToSwap = _minTokensBeforeSwap - liquidityTokenHalfAsBOLAS;
                 // Contract's current ETH balance.
                 uint256 initialETHBalance = address(this).balance;
                 swapTokensForEth(totalTokensToSwap);
                 uint256 swappedETHAmount = address(this).balance - initialETHBalance;
-                SwapValues memory values = _getSwappableValues(totalTokensToSwap, swappedETHAmount);
+                SwapValues memory values = _getSwappableValues(swappedETHAmount);
 
                 // process adding liquidity
-                addLiquidity(values.liquidityETHAmount, values.liquidityTokenAmount);
+                addLiquidity(values.liquidityETHAmount, liquidityTokenHalfAsBOLAS);
 
                 // process sending dividends
                 sendEth(address(dividendTracker), values.dividendsETHAmount);
@@ -585,6 +589,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
                 _inSwapAndLiquify = false;
             }
         }
+    }
+
+    /**
+      * @dev Returns swappable total fee (all fees that should be swapped)
+      * outputs 1% as 100, 1.5% as 150
+     */
+    function _totalSwappableTax() private view returns (uint16) {
+        return _taxLiquify + _taxDividend + _taxMarketing;
     }
 
     /**
@@ -687,7 +699,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             tokenAmount,
             0, // slippage is unavoidable
             0, // slippage is unavoidable
-            burnAccount, // the LP is sent to burnAccount.
+            _liquidityWallet, // the LP is sent to burnAccount.
             block.timestamp + 60 * 1000
         );
     }
@@ -731,15 +743,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /**
      * @dev Returns swappable fee amounts in ETH.
      */
-    function _getSwappableValues(uint256 swappedTokenAmount, uint256 swappedETHAmount) private view returns (SwapValues memory) {
+    function _getSwappableValues(uint256 swappedETHAmount) private view returns (SwapValues memory) {
         SwapValues memory values;
-        values.totalETHAmount = swappedETHAmount;
-        uint16 totalTax = _totalSwappableTax();
+        uint16 totalTax = (_taxLiquify / 2) + _taxDividend + _taxMarketing;
 
         values.dividendsETHAmount = _calculateSwappableTax(swappedETHAmount, _taxDividend, totalTax);
         values.marketingETHAmount = _calculateSwappableTax(swappedETHAmount, _taxMarketing, totalTax);
-        values.liquidityETHAmount = _calculateSwappableTax(swappedETHAmount, _taxLiquify, totalTax);
-        values.liquidityTokenAmount = _calculateSwappableTax(swappedTokenAmount, _taxLiquify, totalTax);
+        // remaining ETH is as the liquidity half
+        values.liquidityETHAmount = swappedETHAmount - (values.dividendsETHAmount + values.marketingETHAmount);
 
         return values;
     }
@@ -749,14 +760,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      */
     function _calculateSwappableTax(uint256 amount, uint16 tax, uint16 totalTax) private pure returns (uint256) {
         return (amount * tax) / totalTax;
-    }
-
-    /**
-      * @dev Returns swappable total fee (all fees that should be swapped)
-      * outputs 1% as 100, 1.5% as 150
-     */
-    function _totalSwappableTax() private view returns (uint16) {
-        return _taxLiquify + _taxDividend + _taxMarketing;
     }
 
     /*
@@ -1059,6 +1062,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
         emit UpdateMarketingWallet(newAddress, address(_marketingWallet));
         _marketingWallet = newAddress;
+    }
+
+    function updateLiquidityWallet(address newAddress) public onlyOwner {
+        require(newAddress != address(_liquidityWallet), "Same address already has been set!");
+        if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
+        if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
+        emit UpdateLiquidityWallet(newAddress, address(_liquidityWallet));
+        _liquidityWallet = newAddress;
     }
 
     function _getNamed(address addressToGet) internal view returns (string memory){

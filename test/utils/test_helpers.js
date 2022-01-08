@@ -5,7 +5,7 @@ const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const BOLAS = artifacts.require('BOLAS');
 const BOLASDividendTracker = artifacts.require('BOLASDividendTracker');
-const {deployments, network} = require('hardhat');
+const {deployments, network, getNamedAccounts} = require('hardhat');
 const {forking} = require("../config/network_config");
 
 async function resetNetwork() {
@@ -34,13 +34,14 @@ async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
     return token;
 }
 
-async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidityTokenAmount = 50000000) {
+async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidityTokenAmount = 50_000_000) {
+    const {liquidityWallet} = await getNamedAccounts();
     const routerAddress = await token.uniswapV2Router();
     const totalSupply = await token.totalSupply();
     await token.approve(routerAddress, totalSupply, {from: accounts[0]});
     const router = await IUniswapV2Router02.at(routerAddress);
     await router.addLiquidityETH(
-        token.address, tokenToRaw(liquidityTokenAmount), 0, 0, accounts[8], new Date().getTime() + 3600000,
+        token.address, tokenToRaw(liquidityTokenAmount), 0, 0, liquidityWallet, new Date().getTime() + 3600000,
         {from: accounts[0], value: testUtils.toWei(liquidityETHAmount)});
 }
 
