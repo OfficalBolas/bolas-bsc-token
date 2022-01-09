@@ -58,7 +58,11 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         assertBigNumberEqual(withdrawableDividends, 0)
     });
 
-    // Doing swaps to create dividends
+    // Disable auto dividend
+    it('Disable auto dividend processing', async () => {
+        await token.switchAutoDividendProcessing(false);
+    });
+    // Do swaps to create dividends
     it('Buying tokens for 0.3 ETH should work', async () => {
         await testHelpers.buyTokens(token, 0.3, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
@@ -83,8 +87,28 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         assertBigNumberGt(totalDistributed, '8000000000000000');
         assertBigNumberLt(totalDistributed, '12000000000000000');
     });
+    it('account[1] withdrawable dividend should be above zero', async () => {
+        const withdrawableDividends = await token.withdrawableDividendOf(accounts[1]);
+        assertBigNumberGt(withdrawableDividends, '3000000000000000');
+        assertBigNumberLt(withdrawableDividends, '5000000000000000');
+    });
+
+    // Enable auto dividend
+    it('Enable auto dividend processing', async () => {
+        await token.switchAutoDividendProcessing(true);
+    });
+
+    // Do swaps to create dividends
+    it('Selling 20,000,000 tokens for ETH should work', async () => {
+        await testHelpers.sellTokens(token, 20_000_000, accounts[2]);
+        const balance = await token.balanceOf(accounts[2])
+        const balanceInTokens = rawToTokenNumber(balance);
+        assert(balanceInTokens > 20_000_000 && balanceInTokens < 50_000_000, `${balanceInTokens} is not in the correct range`);
+    });
+
+    // Dividend tests after swaps
     it('account[1] withdrawable dividend should be 0 because its already distributed', async () => {
-        const withdrawableDividends = await token.withdrawableDividendOf(accounts[1])
+        const withdrawableDividends = await token.withdrawableDividendOf(accounts[1]);
         assertBigNumberEqual(withdrawableDividends, '0');
     });
 })
