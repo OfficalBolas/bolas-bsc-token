@@ -488,26 +488,42 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * - `sender` must have a balance of at least `amount`.
      */
     function _transfer(address sender, address recipient, uint256 amount) internal override {
+        require(sender != address(0), "ERC20: transfer from the zero address");
+        require(recipient != address(0), "ERC20: transfer to the zero address");
+        _beforeTokenTransfer(sender, recipient, amount);
         if (amount == 0) {
             _transferTokens(sender, recipient, 0);
+            emit Transfer(sender, recipient, amount);
             return;
         }
 
         // process fees
-        bool takeFee = !_isExcludedFromFee[sender];
+        bool takeFee = !_isExcludedFromFee[sender] && !_isExcludedFromFee[recipient];
         ValuesFromAmount memory values = _getValues(amount, takeFee);
         if (takeFee) {
-            _processTokenFees(sender, values);
+            _transferTokens(sender, address(this), values.totalFeeIntoContract);
+            _transferTokens(sender, burnAccount, values.burnFee);
         }
+
+        //Swapping is only possible if sender is not pancake pair,
+        //if its not manually disabled, if its not already swapping
+        if (
+            takeFee
+            && (sender != _uniswapV2Pair)
+            && (_autoSwapAndLiquifyEnabled)
+            && (!_inSwapAndLiquify)
+        ) _swapContractToken();
 
         // send tokens to recipient
         _transferTokens(sender, recipient, values.transferAmount);
-
         // process swaps
-        _processTransferSwaps(sender, recipient);
+        // _processTransferSwaps(sender, recipient);
 
         // process dividends
         _processTransferDividends(sender, recipient);
+
+        _afterTokenTransfer(sender, recipient, amount);
+        emit Transfer(sender, recipient, amount);
     }
 
     /**
@@ -518,26 +534,26 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         address recipient,
         uint256 amount
     ) internal {
-        require(sender != address(0), "ERC20: transfer from the zero address");
-        require(recipient != address(0), "ERC20: transfer to the zero address");
-
-        _beforeTokenTransfer(sender, recipient, amount);
-
         uint256 senderBalance = _balances[sender];
         require(senderBalance >= amount, "ERC20: transfer amount exceeds balance");
     unchecked {
         _balances[sender] = senderBalance - amount;
     }
         _balances[recipient] += amount;
-
-        emit Transfer(sender, recipient, amount);
-
-        _afterTokenTransfer(sender, recipient, amount);
     }
 
-    function _processTokenFees(address sender, ValuesFromAmount memory values) internal {
-        _transferTokens(sender, address(this), values.totalFeeIntoContract);
-        _transferTokens(sender, burnAccount, values.burnFee);
+    function _swapContractToken() private {
+        // preparation
+        uint contractBalance = _balances[address(this)];
+        bool overMinTokensBeforeSwap = contractBalance >= _minTokensBeforeSwap;
+        if (!overMinTokensBeforeSwap) return;
+        uint tokensToSwap = _minTokensBeforeSwap;
+
+        uint initialETHBalance = address(this).balance;
+        swapTokensForEth(tokensToSwap);
+        uint newETH = (address(this).balance - initialETHBalance);
+
+        console.log('Swapped and collected', newETH, 'ETH!');
     }
 
     function _processTransferDividends(address sender, address recipient) internal {
@@ -556,40 +572,42 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         }
     }
 
-    function _processTransferSwaps(address sender, address recipient) internal {
-        if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled && sender != _liquidityWallet && recipient != _liquidityWallet) {
-            uint256 contractTokenBalance = balanceOf(address(this));
-            // whether the current contract balances makes the threshold to swap and liquify.
-            bool overMinTokensBeforeSwap = contractTokenBalance >= _minTokensBeforeSwap;
+    /*
+        function _processTransferSwaps(address sender, address recipient) internal {
+            if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled && sender != _liquidityWallet && recipient != _liquidityWallet) {
+                uint256 contractTokenBalance = balanceOf(address(this));
+                // whether the current contract balances makes the threshold to swap and liquify.
+                bool overMinTokensBeforeSwap = contractTokenBalance >= _minTokensBeforeSwap;
 
-            if (overMinTokensBeforeSwap && !automatedMarketMakerPairs[sender]) {
-                // start and lock swap
-                _inSwapAndLiquify = true;
+                if (overMinTokensBeforeSwap && !automatedMarketMakerPairs[sender]) {
+                    // start and lock swap
+                    _inSwapAndLiquify = true;
 
-                uint256 totalTokensForLiquidity = _minTokensBeforeSwap * _taxLiquify / _totalSwappableTax();
-                uint256 liquidityTokenHalfAsETH = totalTokensForLiquidity / 2;
-                uint256 liquidityTokenHalfAsBOLAS = totalTokensForLiquidity - liquidityTokenHalfAsETH;
-                uint256 totalTokensToSwap = _minTokensBeforeSwap - liquidityTokenHalfAsBOLAS;
-                // Contract's current ETH balance.
-                uint256 initialETHBalance = address(this).balance;
-                swapTokensForEth(totalTokensToSwap);
-                uint256 swappedETHAmount = address(this).balance - initialETHBalance;
-                SwapValues memory values = _getSwappableValues(swappedETHAmount);
+                    uint256 totalTokensForLiquidity = _minTokensBeforeSwap * _taxLiquify / _totalSwappableTax();
+                    uint256 liquidityTokenHalfAsETH = totalTokensForLiquidity / 2;
+                    uint256 liquidityTokenHalfAsBOLAS = totalTokensForLiquidity - liquidityTokenHalfAsETH;
+                    uint256 totalTokensToSwap = _minTokensBeforeSwap - liquidityTokenHalfAsBOLAS;
+                    // Contract's current ETH balance.
+                    uint256 initialETHBalance = address(this).balance;
+                    swapTokensForEth(totalTokensToSwap);
+                    uint256 swappedETHAmount = address(this).balance - initialETHBalance;
+                    SwapValues memory values = _getSwappableValues(swappedETHAmount);
 
-                // process adding liquidity
-                addLiquidity(values.liquidityETHAmount, liquidityTokenHalfAsBOLAS);
+                    // process adding liquidity
+                    addLiquidity(values.liquidityETHAmount, liquidityTokenHalfAsBOLAS);
 
-                // process sending dividends
-                sendEth(address(dividendTracker), values.dividendsETHAmount);
+                    // process sending dividends
+                    sendEth(address(dividendTracker), values.dividendsETHAmount);
 
-                // process sending marketing fee
-                sendEth(_marketingWallet, values.marketingETHAmount);
+                    // process sending marketing fee
+                    sendEth(_marketingWallet, values.marketingETHAmount);
 
-                // end & unlock swap
-                _inSwapAndLiquify = false;
+                    // end & unlock swap
+                    _inSwapAndLiquify = false;
+                }
             }
         }
-    }
+    */
 
     /**
       * @dev Returns swappable total fee (all fees that should be swapped)

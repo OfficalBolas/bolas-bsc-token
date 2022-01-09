@@ -62,6 +62,6 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         await testHelpers.sellTokens(token, 80_000_000, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
-        assert(balanceInTokens > 4_000_000 && balanceInTokens < 6_000_000);
+        assert(balanceInTokens > 40_000_000 && balanceInTokens < 70_000_000, `${balanceInTokens} is not in the correct range`);
     });
 })
