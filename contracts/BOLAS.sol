@@ -160,17 +160,26 @@ contract BOLAS is ERC20, Ownable {
     event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
 
     constructor(address appWallet_, address marketingWallet_, address liquidityWallet_, address swapRouterAddress_) ERC20("BOLAS", "BOLAS") {
+        // uniswap initialization
+        uniswapV2Router = IUniswapV2Router02(swapRouterAddress_);
+        _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
+        automatedMarketMakerPairs[_uniswapV2Pair] = true;
+        _approve(address(this), address(uniswapV2Router), type(uint256).max);
+
         // enable features
         switchAutoBurn(600, true);
         switchAutoDividend(300, true);
-        switchAutoSwapAndLiquify(100, swapRouterAddress_, 10_000_000 * 10 ** decimals(), true);
+        switchAutoSwapAndLiquify(100, 10_000_000 * 10 ** decimals(), true);
         setTaxMarketing(100);
         setAllTaxApps([uint16(0), 0, 0, 0, 0, 0]);
 
         // dividend setup
+        dividendTracker.excludeFromDividends(address(uniswapV2Router), true);
+        dividendTracker.excludeFromDividends(_uniswapV2Pair, true);
 
         // exclude this contract from fee.
         excludeAccountFromFee(address(this));
+        excludeAccountFromFee(address(uniswapV2Router));
 
         // configure wallets
         updateAppsWallet(appWallet_);
@@ -790,7 +799,7 @@ contract BOLAS is ERC20, Ownable {
         emit EnabledAutoDividend();
     }
 
-    function switchAutoSwapAndLiquify(uint16 taxLiquify_, address routerAddress, uint256 minTokensBeforeSwap_, bool enable) public onlyOwner {
+    function switchAutoSwapAndLiquify(uint16 taxLiquify_, uint256 minTokensBeforeSwap_, bool enable) public onlyOwner {
         if (!enable) {
             require(_autoSwapAndLiquifyEnabled, "Already disabled.");
             setTaxLiquify(0);
@@ -803,30 +812,6 @@ contract BOLAS is ERC20, Ownable {
         require(taxLiquify_ > 0, "Tax must be greater than 0.");
 
         _minTokensBeforeSwap = minTokensBeforeSwap_;
-
-        // init Router
-        IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(routerAddress);
-
-        _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).getPair(address(this), _uniswapV2Router.WETH());
-
-        if (_uniswapV2Pair == address(0)) {
-            _uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
-            .createPair(address(this), _uniswapV2Router.WETH());
-        }
-        // add pair to automatedMarketMakerPairs
-        automatedMarketMakerPairs[_uniswapV2Pair] = true;
-
-        // save router in the contract
-        uniswapV2Router = _uniswapV2Router;
-
-        _approve(address(this), address(_uniswapV2Router), type(uint256).max);
-        // exclude uniswapV2Router & pair from paying fees.
-        excludeAccountFromFee(address(_uniswapV2Router));
-        // exclude pair & router from dividend tracker
-        dividendTracker.excludeFromDividends(address(_uniswapV2Router), true);
-        dividendTracker.excludeFromDividends(_uniswapV2Pair, true);
-
-        // enable
         _autoSwapAndLiquifyEnabled = true;
         setTaxLiquify(taxLiquify_);
 
