@@ -9,9 +9,9 @@ const BOLASDividendTracker = 'BOLASDividendTracker'
 // Method literals
 const transferOwnership = 'transferOwnership';
 const initialize = 'initialize';
-const enableAutoBurn = 'enableAutoBurn';
-const enableAutoDividend = 'enableAutoDividend';
-const enableAutoSwapAndLiquify = 'enableAutoSwapAndLiquify';
+const switchAutoBurn = 'switchAutoBurn';
+const switchAutoDividend = 'switchAutoDividend';
+const switchAutoSwapAndLiquify = 'switchAutoSwapAndLiquify';
 const switchAutoDividendProcessing = 'switchAutoDividendProcessing';
 const setAllTaxApps = 'setAllTaxApps';
 const setTaxMarketing = 'setTaxMarketing';
@@ -33,9 +33,9 @@ module.exports = async ({getNamedAccounts, deployments}) => {
     await execute(BOLASDividendTracker, {from: deployer}, transferOwnership, bolas.address);
     await execute(BOLAS, {from: deployer}, initialize, dividendTracker.address, appWallet, marketingWallet, liquidityWallet);
     // fees
-    await execute(BOLAS, {from: deployer}, enableAutoBurn, percentToRaw(fees.burnFee));
-    await execute(BOLAS, {from: deployer}, enableAutoDividend, percentToRaw(fees.dividendFee));
-    await execute(BOLAS, {from: deployer}, enableAutoSwapAndLiquify, percentToRaw(fees.liquidityFee), uniswap.routerAddress, tokenToRaw(uniswap.minTokensBeforeSwap));
+    await execute(BOLAS, {from: deployer}, switchAutoBurn, percentToRaw(fees.burnFee), true);
+    await execute(BOLAS, {from: deployer}, switchAutoDividend, percentToRaw(fees.dividendFee), true);
+    await execute(BOLAS, {from: deployer}, switchAutoSwapAndLiquify, percentToRaw(fees.liquidityFee), uniswap.routerAddress, tokenToRaw(uniswap.minTokensBeforeSwap), true);
     await execute(BOLAS, {from: deployer}, switchAutoDividendProcessing, true);
     await execute(BOLAS, {from: deployer}, setTaxMarketing, percentToRaw(fees.marketingFee));
     await execute(BOLAS, {from: deployer}, setAllTaxApps, fees.appFees.map((fee) => percentToRaw(fee)));
