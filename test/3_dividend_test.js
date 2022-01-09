@@ -84,13 +84,13 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
     it('Total dividends ETH distributed should be above zero after swaps', async () => {
         const totalDistributed = await token.getTotalDividendsDistributed();
-        assertBigNumberGt(totalDistributed, '8000000000000000');
-        assertBigNumberLt(totalDistributed, '12000000000000000');
+        assertBigNumberGt(totalDistributed, '10000000000000000');
+        assertBigNumberLt(totalDistributed, '13000000000000000');
     });
     it('account[1] withdrawable dividend should be above zero', async () => {
         const withdrawableDividends = await token.withdrawableDividendOf(accounts[1]);
-        assertBigNumberGt(withdrawableDividends, '3000000000000000');
-        assertBigNumberLt(withdrawableDividends, '5000000000000000');
+        assertBigNumberGt(withdrawableDividends, '4000000000000000');
+        assertBigNumberLt(withdrawableDividends, '6000000000000000');
     });
 
     // Enable auto dividend
