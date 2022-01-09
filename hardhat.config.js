@@ -19,7 +19,7 @@ module.exports = {
             chainId: 999,
             loggingEnabled: false,
             forking: forking,
-            allowUnlimitedContractSize: true,
+            allowUnlimitedContractSize: false,
         }
     },
     solidity: {
