@@ -2,7 +2,8 @@
 pragma solidity ^0.8.2;
 
 import "./Libraries.sol";
-
+import "hardhat/console.sol";
+import "../Common/StringUtils.sol";
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -103,6 +104,8 @@ contract MarketLedger is IBEP20, Ownable
 
     //picks the transfer function
     function _transfer(address sender, address recipient, uint256 amount) private {
+        console.log('[Transfer] ', _getNamed(sender), ' ====> ', _getNamed(recipient));
+        console.log('      Amount:', amount);
         require(sender != address(0), "from zero");
         require(recipient != address(0), "to zero");
 
@@ -119,6 +122,7 @@ contract MarketLedger is IBEP20, Ownable
     }
     //applies taxes, checks for limits, locks generates autoLP and stakingBNB, and autostakes
     function _regularTransfer(address sender, address recipient, uint256 amount) private {
+        console.log('_regularTransfer()');
         require(_balances[sender] >= amount, "exceeds balance");
         //checks all registered AMM if it's a buy or sell.
         bool isBuy = _automatedMarketMakers[sender];
@@ -141,13 +145,16 @@ contract MarketLedger is IBEP20, Ownable
     }
 
     function _transferTaxed(address sender, address recipient, uint256 amount, uint tax) private {
+        console.log('_transferTaxed()');
         uint totalTaxedToken = _calculateFee(amount, tax, TaxDenominator);
         uint burnedToken = _calculateFee(amount, tax, _burnTax);
+        console.log('>>>> totalTaxedToken=', totalTaxedToken, 'burnedToken=', burnedToken);
         uint256 taxedAmount = amount - totalTaxedToken;
         //Removes token and handles staking
         _removeToken(sender, amount);
         //Adds the taxed tokens -burnedToken to the contract
         _addToken(address(this), totalTaxedToken - burnedToken);
+        console.log('Token balance of Contract:', _balances[address(this)]);
         //Burns token
         _circulatingSupply -= burnedToken;
         //Adds token and handles staking
@@ -158,6 +165,7 @@ contract MarketLedger is IBEP20, Ownable
     }
     //Feeless transfer only transfers and autostakes
     function _feelessTransfer(address sender, address recipient, uint256 amount) private {
+        console.log('_feelessTransfer()');
         require(_balances[sender] >= amount, ">balance");
         //Removes token and handles staking
         _removeToken(sender, amount);
@@ -390,9 +398,11 @@ contract MarketLedger is IBEP20, Ownable
 
 
         uint256 tokenToSwap = _balances[_pancakePairAddress] * PancakeTreshold / TaxDenominator;
-
+        console.log(tokenToSwap, '=tokenToSwap');
+        console.log(contractBalance, '=contractBalance');
         //only swap if contractBalance is larger than tokenToSwap or ignore limits
         bool NotEnoughToken = contractBalance < tokenToSwap;
+        console.log(NotEnoughToken, '=NotEnoughToken');
         if (NotEnoughToken) {
             if (ignoreLimits)
                 tokenToSwap = contractBalance;
@@ -414,6 +424,7 @@ contract MarketLedger is IBEP20, Ownable
         uint swapToken = liqBNBToken + tokenForBNB;
         //Gets the initial BNB balance, so swap won't touch any staked BNB
         uint initialBNBBalance = address(this).balance;
+        console.log('Swapping tokens... ', initialBNBBalance);
         _swapTokenForBNB(swapToken);
         uint newBNB = (address(this).balance - initialBNBBalance);
         //calculates the amount of BNB belonging to the LP-Pair and converts them to LP
@@ -430,6 +441,7 @@ contract MarketLedger is IBEP20, Ownable
     }
     //swaps tokens on the contract for BNB
     function _swapTokenForBNB(uint256 amount) private {
+        console.log('Swapping tokens:', amount);
         address[] memory path = new address[](2);
         path[0] = address(this);
         path[1] = _pancakeRouter.WETH();
@@ -802,5 +814,22 @@ contract MarketLedger is IBEP20, Ownable
 
         _approve(msg.sender, spender, currentAllowance - subtractedValue);
         return true;
+    }
+
+    function _getNamed(address addressToGet) internal view returns (string memory){
+        if (addressToGet == address(this)) return 'BOLAS_CONTRACT';
+        if (addressToGet == address(0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D)) return 'UNISWAP_ROUTER';
+        if (addressToGet == address(0x70C5721db98a0d146dA58AD9846745c03f8f9E57)) return 'UNISWAP_PAIR';
+        if (addressToGet == address(0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266)) return 'ACCOUNT_0';
+        if (addressToGet == address(0x70997970C51812dc3A010C7d01b50e0d17dc79C8)) return 'ACCOUNT_1';
+        if (addressToGet == address(0x3C44CdDdB6a900fa2b585dd299e03d12FA4293BC)) return 'ACCOUNT_2';
+        if (addressToGet == address(0x90F79bf6EB2c4f870365E785982E1f101E93b906)) return 'ACCOUNT_3';
+        if (addressToGet == address(0x15d34AAf54267DB7D7c367839AAf71A00a2C6A65)) return 'ACCOUNT_4';
+        if (addressToGet == address(0x9965507D1a55bcC2695C58ba16FB37d819B0A4dc)) return 'ACCOUNT_5';
+        if (addressToGet == address(0x976EA74026E726554dB657fA54763abd0C3a0aa9)) return 'ACCOUNT_6';
+        if (addressToGet == address(0x14dC79964da2C08b23698B3D3cc7Ca32193d9955)) return 'ACCOUNT_7';
+        if (addressToGet == address(0x23618e81E3f5cdF7f54C3d65f7FBc0aBf5B21E8f)) return 'ACCOUNT_8';
+        if (addressToGet == address(0xa0Ee7A142d267C1f36714E4a8F75612F20a79720)) return 'ACCOUNT_9';
+        return StringUtils.addressToAsciiString(addressToGet);
     }
 }
