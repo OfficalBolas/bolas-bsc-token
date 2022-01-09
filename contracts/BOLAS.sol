@@ -666,9 +666,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         path[0] = address(this);
         path[1] = uniswapV2Router.WETH();
 
-        _approve(address(this), address(uniswapV2Router), amount);
-
-
         // Swap tokens to ETH
         uniswapV2Router.swapExactTokensForETHSupportingFeeOnTransferTokens(
             amount,
@@ -689,8 +686,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * Emits {Transfer} event. From this contract to the token and WETH Pai.
      */
     function addLiquidity(uint256 ethAmount, uint256 tokenAmount) private {
-        _approve(address(this), address(uniswapV2Router), tokenAmount);
-
         // Add the ETH and token to LP.
         // The LP tokens will be sent to burnAccount.
         // No one will have access to them, so the liquidity will be locked forever.
@@ -841,6 +836,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // save router in the contract
         uniswapV2Router = _uniswapV2Router;
 
+        _approve(address(this), address(_uniswapV2Router), type(uint256).max);
         // exclude uniswapV2Router & pair from paying fees.
         excludeAccountFromFee(address(_uniswapV2Router));
         // exclude pair & router from dividend tracker
