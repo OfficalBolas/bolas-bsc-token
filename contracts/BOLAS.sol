@@ -86,7 +86,7 @@ contract BOLAS is ERC20, Ownable {
 
     // Dividend states
     BOLASDividendTracker public dividendTracker;
-    bool public isAutoDividendProcessing;
+    bool public isAutoDividendProcessing = true;
     uint256 public gasForProcessing = 150000; // processing auto-claiming dividends
 
     // Return values of _getValues function.
@@ -159,7 +159,16 @@ contract BOLAS is ERC20, Ownable {
     event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
 
-    constructor(address appWallet_, address marketingWallet_, address liquidityWallet_) ERC20("BOLAS", "BOLAS") {
+    constructor(address appWallet_, address marketingWallet_, address liquidityWallet_, address swapRouterAddress_) ERC20("BOLAS", "BOLAS") {
+        // enable features
+        switchAutoBurn(600, true);
+        switchAutoDividend(300, true);
+        switchAutoSwapAndLiquify(100, swapRouterAddress_, 10_000_000 * 10 ** decimals(), true);
+        setTaxMarketing(100);
+        setAllTaxApps([uint16(0), 0, 0, 0, 0, 0]);
+
+        // dividend setup
+
         // exclude this contract from fee.
         excludeAccountFromFee(address(this));
 
@@ -949,7 +958,7 @@ contract BOLAS is ERC20, Ownable {
       * Emits a {AllAppTaxUpdate} event.
       */
     function setAllTaxApps(
-        uint16[6] calldata fees
+        uint16[6] memory fees
     ) public onlyOwner {
         for (uint256 i = 0; i < 6; i++) _taxApps[i] = fees[i];
         _totalTaxApps = 0;

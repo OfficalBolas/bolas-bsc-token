@@ -1,4 +1,5 @@
 const {gasConfigs} = require("../test/config/network_config");
+const {uniswap} = require("../test/config/token_config");
 
 // Contract literals
 const BOLAS = 'BOLAS'
@@ -17,7 +18,7 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
     await deploy(BOLAS, {
         from: deployer, ...gasConfig,
         libraries: {IterableMapping: iterableMapping.address},
-        args: [appWallet, marketingWallet, liquidityWallet]
+        args: [appWallet, marketingWallet, liquidityWallet, uniswap.routerAddress]
     });
 };
 module.exports.tags = [BOLAS];
