@@ -9,6 +9,7 @@ const fs = require("fs");
 const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
+    defaultNetwork: 'hardhat',
     namedAccounts: {
         deployer: 0,
         tokenOwner: 1,

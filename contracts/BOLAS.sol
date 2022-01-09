@@ -2,11 +2,10 @@
 pragma solidity ^0.8.2;
 
 // OpenZeppelin libs
-import "@openzeppelin/contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/utils/StringsUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Strings.sol";
 // UniSwap libs
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
@@ -18,7 +17,7 @@ import "./DividendTracker/BOLASDividendTracker.sol";
 import "hardhat/console.sol";
 import "./Common/StringUtils.sol";
 
-contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgradeable {
+contract BOLAS is ERC20, Ownable {
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
 
@@ -160,16 +159,9 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
 
-    function initialize(address dividendTracker_, address appWallet_, address marketingWallet_, address liquidityWallet_) initializer public {
-        __ERC20_init("BOLAS", "BOLAS");
-        __Ownable_init();
-        __UUPSUpgradeable_init();
-
+    constructor(address appWallet_, address marketingWallet_, address liquidityWallet_) ERC20("BOLAS", "BOLAS") {
         // exclude this contract from fee.
         excludeAccountFromFee(address(this));
-
-        // dividend
-        updateDividendTracker(dividendTracker_);
 
         // configure wallets
         updateAppsWallet(appWallet_);
@@ -179,12 +171,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         // Add initial supply to sender
         _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
     }
-
-    function _authorizeUpgrade(address newImplementation)
-    internal
-    onlyOwner
-    override
-    {}
 
     // allow the contract to receive ETH
     receive() external payable {}

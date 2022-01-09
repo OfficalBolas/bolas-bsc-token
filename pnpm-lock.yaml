@@ -8,7 +8,6 @@ specifiers:
   '@nomiclabs/hardhat-waffle': ^2.0.1
   '@nomiclabs/hardhat-web3': ^2.0.0
   '@openzeppelin/contracts': ^4.4.1
-  '@openzeppelin/contracts-upgradeable': ^4.4.1
   '@truffle/hdwallet-provider': ^2.0.0
   '@uniswap/v2-core': ^1.0.1
   '@uniswap/v2-periphery': ^1.1.0-beta.0
@@ -41,7 +40,6 @@ devDependencies:
   '@nomiclabs/hardhat-waffle': 2.0.1_b5edb2070812aa32af4b3ffe4f4a52ce
   '@nomiclabs/hardhat-web3': 2.0.0_hardhat@2.8.0+web3@1.6.1
   '@openzeppelin/contracts': 4.4.1
-  '@openzeppelin/contracts-upgradeable': 4.4.1
   '@truffle/hdwallet-provider': 2.0.0_@babel+core@7.16.7
   '@uniswap/v2-core': 1.0.1
   '@uniswap/v2-periphery': 1.1.0-beta.0
@@ -2044,10 +2042,6 @@ packages:
       web3-utils: 1.6.1
     transitivePeerDependencies:
       - supports-color
-    dev: true
-
-  /@openzeppelin/contracts-upgradeable/4.4.1:
-    resolution: { integrity: sha512-84dUN+TBY42D52BzUc4RHxU4KORs8Ys7dj3nH0WX1QKtlS6rrN45gL+sxaotkPdCqFLVLPyj+kd8GfJ4puxVjA== }
     dev: true
 
   /@openzeppelin/contracts/4.4.1:
