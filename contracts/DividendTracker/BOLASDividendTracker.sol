@@ -24,8 +24,8 @@ contract BOLASDividendTracker is DividendPayingToken {
 
     constructor() DividendPayingToken("BOLAS Dividends", "BOLAS_DIVIDEND"){
         claimWait = 3600;
-        minimumTokenBalanceForDividends = 1_000_000 * BASE;
-        //must buy at least 10M+ tokens to be eligibile for dividends
+        minimumTokenBalanceForDividends = 100_000 * BASE;
+        //must buy at least 100K tokens to be eligibile for dividends
     }
     // view functions
     function withdrawDividend() pure public override {
@@ -133,7 +133,7 @@ contract BOLASDividendTracker is DividendPayingToken {
     }
 
     function updateMinimumForDividends(uint256 amount) external onlyOwner {
-        require((amount >= 1_000_000 * BASE) && // 1M minimum
+        require((amount >= 100_000 * BASE) && // 100K minimum
             (10_000_000_000 * BASE >= amount) // 10B maximum
         , "should be 1M <= amount <= 10B");
         require(amount != minimumTokenBalanceForDividends, "value already assigned!");
