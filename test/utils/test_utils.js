@@ -66,8 +66,40 @@ function bigNumberEqual(a, b) {
     return new Big(a.toString()).eq(new Big(b.toString()));
 }
 
+function bigNumberGt(a, b) {
+    return new Big(a.toString()).gt(new Big(b.toString()));
+}
+
+function bigNumberLt(a, b) {
+    return new Big(a.toString()).lt(new Big(b.toString()));
+}
+
+function bigNumberGte(a, b) {
+    return new Big(a.toString()).gte(new Big(b.toString()));
+}
+
+function bigNumberLte(a, b) {
+    return new Big(a.toString()).lte(new Big(b.toString()));
+}
+
 function assertBigNumberEqual(a, b) {
     assert(bigNumberEqual(a, b), `${a.toString()} != ${b.toString()}`);
+}
+
+function assertBigNumberGt(a, b) {
+    assert(bigNumberGt(a, b), `${a.toString()} <= ${b.toString()}`);
+}
+
+function assertBigNumberLt(a, b) {
+    assert(bigNumberLt(a, b), `${a.toString()} >= ${b.toString()}`);
+}
+
+function assertBigNumberGte(a, b) {
+    assert(bigNumberGte(a, b), `${a.toString()} < ${b.toString()}`);
+}
+
+function assertBigNumberLte(a, b) {
+    assert(bigNumberLte(a, b), `${a.toString()} > ${b.toString()}`);
 }
 
 module.exports = {
@@ -85,4 +117,8 @@ module.exports = {
     bigNumberEqual,
     assertBigNumberEqual,
     percentToRaw,
+    assertBigNumberGt,
+    assertBigNumberLt,
+    assertBigNumberGte,
+    assertBigNumberLte,
 }

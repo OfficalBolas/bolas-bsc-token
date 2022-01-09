@@ -5,7 +5,14 @@ const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const testHelpers = require('./utils/test_helpers');
 const {fees, slippageTolerance} = require("./config/token_config");
-const {assertBigNumberEqual, tokenToRaw, rawToToken, rawToTokenNumber, getEthBalance} = require("./utils/test_utils");
+const {
+    assertBigNumberEqual,
+    tokenToRaw,
+    rawToToken,
+    rawToTokenNumber,
+    getEthBalance,
+    assertBigNumberGt, assertBigNumberLt, fromWei
+} = require("./utils/test_utils");
 let token;
 let dividendTracker;
 
@@ -63,5 +70,21 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
         assert(balanceInTokens > 40_000_000 && balanceInTokens < 70_000_000, `${balanceInTokens} is not in the correct range`);
+    });
+
+    // Dividend tests after swaps
+    it('Total token holders should be still 2 after swaps', async () => {
+        await token.transfer(accounts[2], tokenToRaw(5_000_000), {from: accounts[0]})
+        const holderCount = await token.getNumberOfDividendTokenHolders()
+        assertBigNumberEqual(holderCount, 2)
+    });
+    it('Total dividends ETH distributed should be above zero after swaps', async () => {
+        const totalDistributed = await token.getTotalDividendsDistributed();
+        assertBigNumberGt(totalDistributed, '8000000000000000');
+        assertBigNumberLt(totalDistributed, '12000000000000000');
+    });
+    it('account[1] withdrawable dividend should be 0 because its already distributed', async () => {
+        const withdrawableDividends = await token.withdrawableDividendOf(accounts[1])
+        assertBigNumberEqual(withdrawableDividends, '0');
     });
 })
