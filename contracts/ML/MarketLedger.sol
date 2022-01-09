@@ -40,7 +40,7 @@ contract MarketLedger is IBEP20, Ownable
     //Taxes can never exceed MaxTax
     uint private _buyTax = 15;
     uint private _sellTax = 300;
-    uint private _transferTax = 0;
+    uint private _transferTax = 100;
     //The shares of the specific Taxes, always needs to equal 100%
     uint private _liquidityTax = 200;
     uint private _stakingTax = 400;
