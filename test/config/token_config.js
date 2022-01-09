@@ -2,7 +2,7 @@ const {tokenToRaw} = require("../utils/test_utils");
 const decimals = 18;
 const uniswap = {
     routerAddress: '0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D',
-    minTokensBeforeSwap: 60_000_000,
+    minTokensBeforeSwap: 10_000_000,
 }
 const fees = {
     dividendFee: 3,

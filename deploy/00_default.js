@@ -12,6 +12,7 @@ const initialize = 'initialize';
 const enableAutoBurn = 'enableAutoBurn';
 const enableAutoDividend = 'enableAutoDividend';
 const enableAutoSwapAndLiquify = 'enableAutoSwapAndLiquify';
+const switchAutoDividendProcessing = 'switchAutoDividendProcessing';
 const setAllTaxApps = 'setAllTaxApps';
 const setTaxMarketing = 'setTaxMarketing';
 // deployment
@@ -35,6 +36,7 @@ module.exports = async ({getNamedAccounts, deployments}) => {
     await execute(BOLAS, {from: deployer}, enableAutoBurn, percentToRaw(fees.burnFee));
     await execute(BOLAS, {from: deployer}, enableAutoDividend, percentToRaw(fees.dividendFee));
     await execute(BOLAS, {from: deployer}, enableAutoSwapAndLiquify, percentToRaw(fees.liquidityFee), uniswap.routerAddress, tokenToRaw(uniswap.minTokensBeforeSwap));
+    await execute(BOLAS, {from: deployer}, switchAutoDividendProcessing, true);
     await execute(BOLAS, {from: deployer}, setTaxMarketing, percentToRaw(fees.marketingFee));
     await execute(BOLAS, {from: deployer}, setAllTaxApps, fees.appFees.map((fee) => percentToRaw(fee)));
 };

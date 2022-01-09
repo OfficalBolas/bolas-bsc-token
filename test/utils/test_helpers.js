@@ -34,7 +34,7 @@ async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
     return token;
 }
 
-async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidityTokenAmount = 50_000_000) {
+async function setupLiquidity(token, accounts, liquidityETHAmount = 100, liquidityTokenAmount = 50_000_000_000) {
     const {liquidityWallet} = await getNamedAccounts();
     const routerAddress = await token.uniswapV2Router();
     const totalSupply = await token.totalSupply();

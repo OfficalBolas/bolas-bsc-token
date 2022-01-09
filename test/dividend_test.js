@@ -51,15 +51,15 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         assertBigNumberEqual(withdrawableDividends, 0)
     });
 
-    // Dividends tests after swap
-    it('Buying tokens for 10ETH should work', async () => {
-        await testHelpers.buyTokens(token, 10, accounts[2]);
+    // Doing swaps to create dividends
+    it('Buying tokens for 0.3 ETH should work', async () => {
+        await testHelpers.buyTokens(token, 0.3, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
-        assert(balanceInTokens > 8_000_000 && balanceInTokens < 10_000_000);
+        assert(balanceInTokens > 120_000_000 && balanceInTokens < 150_000_000, `${balanceInTokens} is not in the correct range`);
     });
-    it('Selling 4,000,000 tokens for ETH should work', async () => {
-        await testHelpers.sellTokens(token, 4_000_000, accounts[2]);
+    it('Selling 80,000,000 tokens for ETH should work', async () => {
+        await testHelpers.sellTokens(token, 80_000_000, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
         assert(balanceInTokens > 4_000_000 && balanceInTokens < 6_000_000);
