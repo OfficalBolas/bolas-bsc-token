@@ -57,7 +57,7 @@ contract MarketLedger is IBEP20, Ownable
     //TestNet
     //address private constant PancakeRouter=0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3;
     //MainNet
-    address private constant PancakeRouter = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
+    address private constant PancakeRouter = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
     address public MarketingWallet;
     //modifier for functions only the team can call
     modifier onlyTeam() {
