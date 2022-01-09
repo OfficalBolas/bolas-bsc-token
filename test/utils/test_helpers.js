@@ -9,6 +9,7 @@ const {deployments, network, getNamedAccounts} = require('hardhat');
 const {forking} = require("../config/network_config");
 
 async function resetNetwork() {
+    if (network.name !== 'hardhat') return;
     await network.provider.request({
         method: "hardhat_reset",
         params: [{forking: {jsonRpcUrl: forking.url, blockNumber: forking.blockNumber}},],
