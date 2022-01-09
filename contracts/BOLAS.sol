@@ -547,13 +547,30 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint contractBalance = _balances[address(this)];
         bool overMinTokensBeforeSwap = contractBalance >= _minTokensBeforeSwap;
         if (!overMinTokensBeforeSwap) return;
-        uint tokensToSwap = _minTokensBeforeSwap;
+        // start swapping
+        _inSwapAndLiquify = true;
 
-        uint initialETHBalance = address(this).balance;
-        swapTokensForEth(tokensToSwap);
-        uint newETH = (address(this).balance - initialETHBalance);
+        uint256 totalTokensForLiquidity = _minTokensBeforeSwap * _taxLiquify / _totalSwappableTax();
+        uint256 liquidityTokenHalfAsETH = totalTokensForLiquidity / 2;
+        uint256 liquidityTokenHalfAsBOLAS = totalTokensForLiquidity - liquidityTokenHalfAsETH;
+        uint256 totalTokensToSwap = _minTokensBeforeSwap - liquidityTokenHalfAsBOLAS;
+        // Contract's current ETH balance.
+        uint256 initialETHBalance = address(this).balance;
+        swapTokensForEth(totalTokensToSwap);
+        uint256 swappedETHAmount = address(this).balance - initialETHBalance;
+        SwapValues memory values = _getSwappableValues(swappedETHAmount);
 
-        console.log('Swapped and collected', newETH, 'ETH!');
+        // process adding liquidity
+        addLiquidity(values.liquidityETHAmount, liquidityTokenHalfAsBOLAS);
+
+        // process sending dividends
+        sendEth(address(dividendTracker), values.dividendsETHAmount);
+
+        // process sending marketing fee
+        sendEth(_marketingWallet, values.marketingETHAmount);
+
+        // start swapping
+        _inSwapAndLiquify = false;
     }
 
     function _processTransferDividends(address sender, address recipient) internal {
@@ -571,43 +588,6 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
             } catch {}
         }
     }
-
-    /*
-        function _processTransferSwaps(address sender, address recipient) internal {
-            if (!_inSwapAndLiquify && _autoSwapAndLiquifyEnabled && sender != _liquidityWallet && recipient != _liquidityWallet) {
-                uint256 contractTokenBalance = balanceOf(address(this));
-                // whether the current contract balances makes the threshold to swap and liquify.
-                bool overMinTokensBeforeSwap = contractTokenBalance >= _minTokensBeforeSwap;
-
-                if (overMinTokensBeforeSwap && !automatedMarketMakerPairs[sender]) {
-                    // start and lock swap
-                    _inSwapAndLiquify = true;
-
-                    uint256 totalTokensForLiquidity = _minTokensBeforeSwap * _taxLiquify / _totalSwappableTax();
-                    uint256 liquidityTokenHalfAsETH = totalTokensForLiquidity / 2;
-                    uint256 liquidityTokenHalfAsBOLAS = totalTokensForLiquidity - liquidityTokenHalfAsETH;
-                    uint256 totalTokensToSwap = _minTokensBeforeSwap - liquidityTokenHalfAsBOLAS;
-                    // Contract's current ETH balance.
-                    uint256 initialETHBalance = address(this).balance;
-                    swapTokensForEth(totalTokensToSwap);
-                    uint256 swappedETHAmount = address(this).balance - initialETHBalance;
-                    SwapValues memory values = _getSwappableValues(swappedETHAmount);
-
-                    // process adding liquidity
-                    addLiquidity(values.liquidityETHAmount, liquidityTokenHalfAsBOLAS);
-
-                    // process sending dividends
-                    sendEth(address(dividendTracker), values.dividendsETHAmount);
-
-                    // process sending marketing fee
-                    sendEth(_marketingWallet, values.marketingETHAmount);
-
-                    // end & unlock swap
-                    _inSwapAndLiquify = false;
-                }
-            }
-        }
-    */
 
     /**
       * @dev Returns swappable total fee (all fees that should be swapped)
