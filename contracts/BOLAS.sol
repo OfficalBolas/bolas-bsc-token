@@ -91,7 +91,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     uint256 public gasForProcessing = 150000; // processing auto-claiming dividends
 
     // Return values of _getValues function.
-    struct ValuesFromAmount {
+    struct TokenFeeValues {
         // Amount of tokens for to transfer.
         uint256 amount;
         // Amount tokens charged for burning.
@@ -111,7 +111,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     }
 
     // Return ETH values of _getSwapValues function.
-    struct SwapValues {
+    struct SwapingETHValues {
         // Amount ETH used for liquidity.
         uint256 liquidityETHAmount;
         // Amount ETH used for dividends.
@@ -499,7 +499,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
 
         // process fees
         bool takeFee = !_isExcludedFromFee[sender] && !_isExcludedFromFee[recipient];
-        ValuesFromAmount memory values = _getValues(amount, takeFee);
+        TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
             _transferTokens(sender, burnAccount, values.burnFee);
@@ -558,7 +558,7 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
         uint256 initialETHBalance = address(this).balance;
         swapTokensForEth(totalTokensToSwap);
         uint256 swappedETHAmount = address(this).balance - initialETHBalance;
-        SwapValues memory values = _getSwappableValues(swappedETHAmount);
+        SwapingETHValues memory values = getSwappingETHValues(swappedETHAmount);
 
         // process adding liquidity
         addLiquidity(values.liquidityETHAmount, liquidityTokenHalfAsBOLAS);
@@ -702,8 +702,8 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
      * tXXXX stands for tokenXXXX
      * More details can be found at comments for ValuesForAmount Struct.
      */
-    function _getValues(uint256 amount, bool deductTransferFee) private view returns (ValuesFromAmount memory) {
-        ValuesFromAmount memory values;
+    function _getFeeValues(uint256 amount, bool deductTransferFee) private view returns (TokenFeeValues memory) {
+        TokenFeeValues memory values;
         values.amount = amount;
 
         if (!deductTransferFee) {
@@ -736,14 +736,14 @@ contract BOLAS is Initializable, ERC20Upgradeable, OwnableUpgradeable, UUPSUpgra
     /**
      * @dev Returns swappable fee amounts in ETH.
      */
-    function _getSwappableValues(uint256 swappedETHAmount) private view returns (SwapValues memory) {
-        SwapValues memory values;
+    function getSwappingETHValues(uint256 ethAmount) public view returns (SwapingETHValues memory) {
+        SwapingETHValues memory values;
         uint16 totalTax = (_taxLiquify / 2) + _taxDividend + _taxMarketing;
 
-        values.dividendsETHAmount = _calculateSwappableTax(swappedETHAmount, _taxDividend, totalTax);
-        values.marketingETHAmount = _calculateSwappableTax(swappedETHAmount, _taxMarketing, totalTax);
+        values.dividendsETHAmount = _calculateSwappableTax(ethAmount, _taxDividend, totalTax);
+        values.marketingETHAmount = _calculateSwappableTax(ethAmount, _taxMarketing, totalTax);
         // remaining ETH is as the liquidity half
-        values.liquidityETHAmount = swappedETHAmount - (values.dividendsETHAmount + values.marketingETHAmount);
+        values.liquidityETHAmount = ethAmount - (values.dividendsETHAmount + values.marketingETHAmount);
 
         return values;
     }
