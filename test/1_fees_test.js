@@ -24,6 +24,13 @@ contract('BOLAS FEES TEST', (accounts) => {
         assertBigNumberEqual(balance, tokenToRaw(testHelpers.getTransferAmount(10000, fees)))
     })
 
+    it('transfers: should transfer with no fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
+        token = await testHelpers.reinitializeTokenWithFees(accounts);
+        await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[0]});
+        const balance = await token.balanceOf(accounts[2]);
+        assertBigNumberEqual(balance, tokenToRaw(10000))
+    })
+
     it('transfers: balances match after transfer with fees', async () => {
         token = await testHelpers.reinitializeTokenWithFees(accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[1]});
@@ -31,12 +38,15 @@ contract('BOLAS FEES TEST', (accounts) => {
         assertBigNumberEqual(balance, tokenToRaw(testHelpers.getTransferAmount(10000, fees)))
     })
 
-    it('transfers: should transfer with no fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts);
-        await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[0]});
-        const balance = await token.balanceOf(accounts[2]);
-        assertBigNumberEqual(balance, tokenToRaw(10000))
-    })
+    // total supply & burnt
+    it('total supply: total supply should be reduced after burns', async () => {
+        const totalSupply = await token.totalSupply();
+        assertBigNumberEqual(totalSupply, '159999999999400000000000000000000');
+    });
+    it('total burnt: total burnt should be reduced after burns', async () => {
+        const totalBurnt = await token.totalBurnt();
+        assertBigNumberEqual(totalBurnt, '600000000000000000000');
+    });
 
     // Isolated fees
     it('isolated fees: app taxes should be correctly initialized', async () => {

@@ -505,7 +505,7 @@ contract BOLAS is ERC20, Ownable {
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
-            _transferTokens(sender, burnAccount, values.burnFee);
+            _burn(sender, values.burnFee);
         }
 
         //Swapping is only possible if sender is not pancake pair,
