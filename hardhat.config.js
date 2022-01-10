@@ -12,7 +12,7 @@ module.exports = {
     defaultNetwork: 'hardhat',
     namedAccounts: {
         deployer: 0,
-        tokenOwner: 1,
+        tokenOwner: 0,
         liquidityWallet: 7,
         marketingWallet: 8,
         appWallet: 9,
