@@ -34,8 +34,10 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
     await execute(BOLASDividendTracker, {from: deployer, ...gasConfig}, transferOwnership, bolas.address);
     await execute(BOLAS, {from: deployer, ...gasConfig}, updateDividendTracker, dividendTracker.address);
 
-    console.log(`IterableMapping was deployed at:\n${iterableMapping.address}`)
-    console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`)
-    console.log(`BOLAS token was deployed at:\n${bolas.address}`)
+    if (network.name !== 'hardhat') {
+        console.log(`IterableMapping was deployed at:\n${iterableMapping.address}`)
+        console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`)
+        console.log(`BOLAS token was deployed at:\n${bolas.address}`)
+    }
 };
 module.exports.tags = [BOLAS];

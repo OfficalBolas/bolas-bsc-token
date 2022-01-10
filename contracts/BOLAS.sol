@@ -157,6 +157,7 @@ contract BOLAS is ERC20, Ownable {
     event UpdateAppWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
+    event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
 
     constructor(
         address appWallet_,
@@ -498,10 +499,13 @@ contract BOLAS is ERC20, Ownable {
             return;
         }
 
+        bool hasContracts = _isContract(sender) || _isContract(recipient);
+
         // process fees
-        bool takeFee =
-        !_isExcludedFromFee[sender]
-        && (automatedMarketMakerPairs[sender] || automatedMarketMakerPairs[recipient]);
+        bool takeFee = (!_isExcludedFromFee[sender])
+        && (hasContracts)
+        && (!_inSwapAndLiquify);
+
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
@@ -510,8 +514,8 @@ contract BOLAS is ERC20, Ownable {
 
         //Swapping is only possible if sender is not pancake pair,
         if (
-            takeFee
-            && (sender != _uniswapV2Pair)
+            (hasContracts)
+            && (!automatedMarketMakerPairs[sender])
             && (_autoSwapAndLiquifyEnabled)
             && (!_inSwapAndLiquify)
         ) _swapContractToken();
@@ -589,6 +593,18 @@ contract BOLAS is ERC20, Ownable {
                 emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, true, gas, tx.origin);
             } catch {}
         }
+    }
+
+    function _isContract(address account) internal view returns (bool) {
+        // This method relies on extcodesize, which returns 0 for contracts in
+        // construction, since the code is only stored at the end of the
+        // constructor execution.
+
+        uint256 size;
+        assembly {
+            size := extcodesize(account)
+        }
+        return size > 0;
     }
 
     /**
@@ -760,6 +776,13 @@ contract BOLAS is ERC20, Ownable {
     /*
         Owner functions
     */
+
+    function setAutomatedMarketMakerPair(address pair, bool value) public onlyOwner {
+        require(automatedMarketMakerPairs[pair] != value, "AMM pair has been assigned!");
+        automatedMarketMakerPairs[pair] = value;
+        if (value) dividendTracker.excludeFromDividends(pair, value);
+        emit SetAutomatedMarketMakerPair(pair, value);
+    }
 
     function switchAutoBurn(uint16 taxBurn_, bool enable) public onlyOwner {
         if (!enable) {
