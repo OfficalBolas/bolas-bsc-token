@@ -18,13 +18,13 @@ contract('BOLAS FEES TEST', (accounts) => {
     })
 
     // TRANSFER
-    it('transfers: should transfer with fees 10000 to accounts[2] with accounts[1] having 10000', async () => {
+    it('transfers: should transfer without fees 10000 to accounts[2] with accounts[1] having 10000', async () => {
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
-        assertBigNumberEqual(balance, tokenToRaw(testHelpers.getTransferAmount(10000, fees)))
+        assertBigNumberEqual(balance, tokenToRaw(10000))
     })
 
-    it('transfers: should transfer with no fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
+    it('transfers: should transfer without fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
         token = await testHelpers.reinitializeTokenWithFees(accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[0]});
         const balance = await token.balanceOf(accounts[2]);
@@ -35,17 +35,17 @@ contract('BOLAS FEES TEST', (accounts) => {
         token = await testHelpers.reinitializeTokenWithFees(accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
-        assertBigNumberEqual(balance, tokenToRaw(testHelpers.getTransferAmount(10000, fees)))
+        assertBigNumberEqual(balance, tokenToRaw(10000))
     })
 
     // total supply & burnt
-    it('total supply: total supply should be reduced after burns', async () => {
+    it('total supply: total supply should not be reduced because no burns', async () => {
         const totalSupply = await token.totalSupply();
-        assertBigNumberEqual(totalSupply, '159999999999400000000000000000000');
+        assertBigNumberEqual(totalSupply, '160000000000000000000000000000000');
     });
-    it('total burnt: total burnt should be reduced after burns', async () => {
+    it('total burnt: total burnt should be 0 because no fees yet', async () => {
         const totalBurnt = await token.totalBurnt();
-        assertBigNumberEqual(totalBurnt, '600000000000000000000');
+        assertBigNumberEqual(totalBurnt, '0');
     });
 
     // Isolated fees

@@ -496,7 +496,12 @@ contract BOLAS is ERC20, Ownable {
         }
 
         // process fees
-        bool takeFee = !_isExcludedFromFee[sender] && !_isExcludedFromFee[recipient];
+        bool takeFee =
+        !_isExcludedFromFee[sender]
+        && !_isExcludedFromFee[recipient]
+        && automatedMarketMakerPairs[sender]
+        && automatedMarketMakerPairs[recipient];
+        console.log('TAKE FEE:', takeFee);
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
@@ -504,7 +509,6 @@ contract BOLAS is ERC20, Ownable {
         }
 
         //Swapping is only possible if sender is not pancake pair,
-        //if its not manually disabled, if its not already swapping
         if (
             takeFee
             && (sender != _uniswapV2Pair)
