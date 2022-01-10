@@ -5,7 +5,13 @@ const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const testUtils = require('./utils/test_utils');
 const testHelpers = require('./utils/test_helpers');
 const {slippageTolerance} = require("./config/token_config");
-const {assertBigNumberEqual, tokenToRaw, rawToToken} = require("./utils/test_utils");
+const {
+    assertBigNumberEqual,
+    tokenToRaw,
+    rawToToken,
+    assertBigNumberGt,
+    assertBigNumberLt
+} = require("./utils/test_utils");
 const Big = require("big.js");
 let token;
 
@@ -97,5 +103,17 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`SWAPPING BALANCE CHANGE: ETH ${ethBalanceDiff}`);
         console.log(`SWAPPING SLIPPAGE: ${slippage}%`);
         assert(slippage > slippageTolerance.minSellSlippage && slippage < slippageTolerance.maxSellSlippage);
+    });
+
+    // total supply & burnt
+    it('total supply: total supply should be reduced after burns', async () => {
+        const totalSupply = await token.totalSupply();
+        assertBigNumberGt(totalSupply, '150000000000000000000000000000000');
+        assertBigNumberLt(totalSupply, '170000000000000000000000000000000');
+    });
+    it('total burnt: total burnt should be reduced after burns', async () => {
+        const totalBurnt = await token.totalBurnt();
+        assertBigNumberGt(totalBurnt, '2900000000000000000000000');
+        assertBigNumberLt(totalBurnt, '3100000000000000000000000');
     });
 })

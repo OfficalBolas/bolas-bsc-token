@@ -498,10 +498,7 @@ contract BOLAS is ERC20, Ownable {
         // process fees
         bool takeFee =
         !_isExcludedFromFee[sender]
-        && !_isExcludedFromFee[recipient]
-        && automatedMarketMakerPairs[sender]
-        && automatedMarketMakerPairs[recipient];
-        console.log('TAKE FEE:', takeFee);
+        && (automatedMarketMakerPairs[sender] || automatedMarketMakerPairs[recipient]);
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
