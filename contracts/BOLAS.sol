@@ -18,6 +18,9 @@ import "hardhat/console.sol";
 import "./Common/StringUtils.sol";
 
 contract BOLAS is ERC20, Ownable {
+    // contract version
+    string constant version = '1.0';
+
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
 
