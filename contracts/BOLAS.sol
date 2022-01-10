@@ -510,6 +510,7 @@ contract BOLAS is ERC20, Ownable {
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
+            _transferTokens(sender, address(this), values.appFee);
             _burn(sender, values.burnFee);
         }
 
@@ -523,8 +524,6 @@ contract BOLAS is ERC20, Ownable {
 
         // send tokens to recipient
         _transferTokens(sender, recipient, values.transferAmount);
-        // process swaps
-        // _processTransferSwaps(sender, recipient);
 
         // process dividends
         _processTransferDividends(sender, recipient);
