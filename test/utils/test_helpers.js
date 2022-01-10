@@ -16,6 +16,13 @@ async function resetNetwork() {
     });
 }
 
+async function initializeWithDeployedToken(accounts, account1Balance = 10000) {
+    const tokenDep = await deployments.get('BOLAS');
+    const token = await BOLAS.at(tokenDep.address);
+    await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
+    return token;
+}
+
 async function reinitializeTokenNoFees(accounts, account1Balance = 10000) {
     await resetNetwork();
     await deployments.fixture(['BOLAS']);
@@ -104,6 +111,7 @@ module.exports = {
     getPriceOfTokenInETH,
     reinitializeTokenNoFees,
     reinitializeTokenWithFees,
+    initializeWithDeployedToken,
     getTokenAmountForETH,
     setupLiquidity,
     buyTokens,
