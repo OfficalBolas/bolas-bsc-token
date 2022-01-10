@@ -145,7 +145,6 @@ contract BOLAS is ERC20, Ownable {
     event DisabledAutoSwapAndLiquify();
     event Airdrop(uint256 amount);
     event ExcludeMultipleAccountsFromFees(address[] accounts, bool isExcluded);
-    event UpdateDividendTracker(address indexed newAddress, address indexed oldAddress);
     event ProcessedDividendTracker(
         uint256 iterations,
         uint256 claims,
@@ -159,7 +158,11 @@ contract BOLAS is ERC20, Ownable {
     event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
 
-    constructor(address appWallet_, address marketingWallet_, address liquidityWallet_, address swapRouterAddress_) ERC20("BOLAS", "BOLAS") {
+    constructor(
+        address appWallet_,
+        address marketingWallet_,
+        address liquidityWallet_,
+        address swapRouterAddress_) ERC20("BOLAS", "BOLAS") {
         // uniswap initialization
         uniswapV2Router = IUniswapV2Router02(swapRouterAddress_);
         _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
@@ -172,10 +175,6 @@ contract BOLAS is ERC20, Ownable {
         switchAutoSwapAndLiquify(100, 10_000_000 * 10 ** decimals(), true);
         setTaxMarketing(100);
         setAllTaxApps([uint16(0), 0, 0, 0, 0, 0]);
-
-        // dividend setup
-        dividendTracker.excludeFromDividends(address(uniswapV2Router), true);
-        dividendTracker.excludeFromDividends(_uniswapV2Pair, true);
 
         // exclude this contract from fee.
         excludeAccountFromFee(address(this));
@@ -192,6 +191,22 @@ contract BOLAS is ERC20, Ownable {
 
     // allow the contract to receive ETH
     receive() external payable {}
+
+    function updateDividendTracker(address dividendTrackerAddress_) external onlyOwner {
+        // dividend setup
+        dividendTracker = BOLASDividendTracker(payable(dividendTrackerAddress_));
+
+        // exclude internals
+        dividendTracker.excludeFromDividends(address(dividendTracker), true);
+        dividendTracker.excludeFromDividends(address(this), true);
+        dividendTracker.excludeFromDividends(owner(), true);
+        dividendTracker.excludeFromDividends(address(uniswapV2Router), true);
+
+        // exclude wallets
+        dividendTracker.excludeFromDividends(_appsWallet, true);
+        dividendTracker.excludeFromDividends(_marketingWallet, true);
+        dividendTracker.excludeFromDividends(_liquidityWallet, true);
+    }
 
     /**
      * @dev See {IERC20-totalSupply}.
@@ -331,7 +346,7 @@ contract BOLAS is ERC20, Ownable {
     }
 
     function hasDividends(address account) external view returns (bool) {
-        (,int256 index, , , , , ,) = dividendTracker.getAccount(account);
+        (, int256 index,,,,,,) = dividendTracker.getAccount(account);
         return (index > - 1);
     }
 
@@ -365,27 +380,6 @@ contract BOLAS is ERC20, Ownable {
         dividendTracker.excludeFromDividends(account, exclude);
     }
 
-    function updateDividendTracker(address newAddress) public onlyOwner {
-        require(newAddress != address(dividendTracker), "Tracker already has been set!");
-        BOLASDividendTracker newDividendTracker = BOLASDividendTracker(payable(newAddress));
-        require(newDividendTracker.owner() == address(this), "Tracker must be owned by token");
-        newDividendTracker.excludeFromDividends(address(newDividendTracker), true);
-        newDividendTracker.excludeFromDividends(address(this), true);
-        // exclude uniswap
-        if (_autoSwapAndLiquifyEnabled) {
-            newDividendTracker.excludeFromDividends(_uniswapV2Pair, true);
-            newDividendTracker.excludeFromDividends(address(uniswapV2Router), true);
-        }
-        // exclude wallets
-        newDividendTracker.excludeFromDividends(owner(), true);
-        newDividendTracker.excludeFromDividends(burnAccount, true);
-        if (_marketingWallet != address(0)) newDividendTracker.excludeFromDividends(_marketingWallet, true);
-        if (_appsWallet != address(0)) newDividendTracker.excludeFromDividends(_appsWallet, true);
-
-        emit UpdateDividendTracker(newAddress, address(dividendTracker));
-        dividendTracker = newDividendTracker;
-    }
-
     function updateGasForProcessing(uint256 newValue) external onlyOwner {
         require(newValue != gasForProcessing, "Value has been assigned!");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
@@ -412,6 +406,11 @@ contract BOLAS is ERC20, Ownable {
     function switchAutoDividendProcessing(bool enabled) external onlyOwner {
         require(enabled != isAutoDividendProcessing, "already has been set!");
         isAutoDividendProcessing = enabled;
+    }
+
+    function _tryExcludeFromDividends(address addressToExclude) internal {
+        if (address(dividendTracker) == address(0) || dividendTracker.isExcludedFromDividends(addressToExclude)) return;
+        dividendTracker.excludeFromDividends(addressToExclude, true);
     }
 
     /**
@@ -955,7 +954,7 @@ contract BOLAS is ERC20, Ownable {
     function updateAppsWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_appsWallet), "Already set!");
         if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
-        if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
+        _tryExcludeFromDividends(newAddress);
         emit UpdateAppWallet(newAddress, address(_appsWallet));
         _appsWallet = newAddress;
     }
@@ -963,7 +962,7 @@ contract BOLAS is ERC20, Ownable {
     function updateMarketingWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_marketingWallet), "Already set!");
         if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
-        if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
+        _tryExcludeFromDividends(newAddress);
         emit UpdateMarketingWallet(newAddress, address(_marketingWallet));
         _marketingWallet = newAddress;
     }
@@ -971,7 +970,7 @@ contract BOLAS is ERC20, Ownable {
     function updateLiquidityWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_liquidityWallet), "Already set!");
         if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
-        if (!dividendTracker.isExcludedFromDividends(newAddress)) dividendTracker.excludeFromDividends(newAddress, true);
+        _tryExcludeFromDividends(newAddress);
         emit UpdateLiquidityWallet(newAddress, address(_liquidityWallet));
         _liquidityWallet = newAddress;
     }

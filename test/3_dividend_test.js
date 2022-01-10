@@ -36,18 +36,18 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
     it('should have correct minimumTokenBalanceForDividends', async () => {
         const minBalance = await dividendTracker.minimumTokenBalanceForDividends()
-        assertBigNumberEqual(minBalance, tokenToRaw(1_000_000))
+        assertBigNumberEqual(minBalance, tokenToRaw(100_000))
     });
 
     // Dividend tests before any swap
-    it('Total token holders should be 1', async () => {
-        const holderCount = await token.getNumberOfDividendTokenHolders()
-        assertBigNumberEqual(holderCount, 1)
-    });
-    it('Total token holders should be 2 after another transfer', async () => {
-        await token.transfer(accounts[2], tokenToRaw(5_000_000), {from: accounts[0]})
+    it('Total token holders should be 2', async () => {
         const holderCount = await token.getNumberOfDividendTokenHolders()
         assertBigNumberEqual(holderCount, 2)
+    });
+    it('Total token holders should be 3 after another transfer', async () => {
+        await token.transfer(accounts[2], tokenToRaw(5_000_000), {from: accounts[0]})
+        const holderCount = await token.getNumberOfDividendTokenHolders()
+        assertBigNumberEqual(holderCount, 3)
     });
     it('Total dividends ETH distributed should be 0 because no swap yet', async () => {
         const totalDistributed = await token.getTotalDividendsDistributed()
@@ -77,10 +77,10 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
 
     // Dividend tests after swaps
-    it('Total token holders should be still 2 after swaps', async () => {
+    it('Total token holders should be still 3 after swaps', async () => {
         await token.transfer(accounts[2], tokenToRaw(5_000_000), {from: accounts[0]})
         const holderCount = await token.getNumberOfDividendTokenHolders()
-        assertBigNumberEqual(holderCount, 2)
+        assertBigNumberEqual(holderCount, 3)
     });
     it('Total dividends ETH distributed should be above zero after swaps', async () => {
         const totalDistributed = await token.getTotalDividendsDistributed();
@@ -89,8 +89,8 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
     it('account[1] withdrawable dividend should be above zero', async () => {
         const withdrawableDividends = await token.withdrawableDividendOf(accounts[1]);
-        assertBigNumberGt(withdrawableDividends, '4000000000000000');
-        assertBigNumberLt(withdrawableDividends, '6000000000000000');
+        assertBigNumberGt(withdrawableDividends, '20000000000000');
+        assertBigNumberLt(withdrawableDividends, '30000000000000');
     });
 
     // Enable auto dividend
