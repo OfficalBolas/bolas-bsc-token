@@ -33,9 +33,6 @@ contract BOLAS is ERC20, Ownable {
     // This Token and WETH pair contract address.
     address internal _uniswapV2Pair;
 
-    // Where burnt tokens are sent to. This is an address that no one can have accesses to.
-    address private constant burnAccount = 0x000000000000000000000000000000000000dEaD;
-
     // Where app fee tokens are sent to. Used for BOLAS app rewards
     address private _appsWallet;
 
@@ -458,7 +455,7 @@ contract BOLAS is ERC20, Ownable {
      */
 
     function _burn(address account, uint256 amount) internal override {
-        require(account != burnAccount, "ERC20: burn from the burn address");
+        require(account != address(0), "ERC20: burn from 0 address");
 
         uint256 accountBalance = balanceOf(account);
         require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
@@ -467,13 +464,11 @@ contract BOLAS is ERC20, Ownable {
     unchecked {
         _balances[account] = accountBalance - amount;
     }
-        _balances[burnAccount] += amount;
 
         _totalSupply -= amount;
         _totalBurnt += amount;
 
         emit Burn(account, amount);
-        emit Transfer(account, burnAccount, amount);
     }
 
     /**
