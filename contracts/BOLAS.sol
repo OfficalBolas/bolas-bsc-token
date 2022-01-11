@@ -27,6 +27,9 @@ contract BOLAS is ERC20, Ownable {
     // Keeps track of which address are excluded from fee.
     mapping(address => bool) private _isExcludedFromFee;
 
+    // addresses that can make transfers before presale is over
+    mapping(address => bool) public canTransferBeforeTradingIsEnabled;
+
     // store addresses that a automatic market maker pairs
     mapping(address => bool) public automatedMarketMakerPairs;
 
@@ -79,6 +82,9 @@ contract BOLAS is ERC20, Ownable {
 
     // Whether a previous call of SwapAndLiquify process is still in process.
     bool private _inSwapAndLiquify;
+
+    // whether the token can already be traded
+    bool public isTradingEnabled;
 
     bool private _autoSwapAndLiquifyEnabled;
     bool private _autoBurnEnabled;
@@ -421,6 +427,7 @@ contract BOLAS is ERC20, Ownable {
     function _transferOwnership(address newOwner) internal override {
         super._transferOwnership(newOwner);
         if (address(dividendTracker) != address(0)) dividendTracker.excludeFromDividends(newOwner, true);
+        canTransferBeforeTradingIsEnabled[newOwner] = true;
         excludeAccountFromFee(newOwner);
     }
 
@@ -492,6 +499,12 @@ contract BOLAS is ERC20, Ownable {
     function _transfer(address sender, address recipient, uint256 amount) internal override {
         require(sender != address(0), "ERC20: transfer from the zero address");
         require(recipient != address(0), "ERC20: transfer to the zero address");
+
+        if (!isTradingEnabled) {
+            //turn transfer on to allow for whitelist
+            require(canTransferBeforeTradingIsEnabled[sender], "Trading is not enabled yet");
+        }
+
         _beforeTokenTransfer(sender, recipient, amount);
         if (amount == 0) {
             _transferTokens(sender, recipient, 0);
@@ -778,6 +791,11 @@ contract BOLAS is ERC20, Ownable {
     /*
         Owner functions
     */
+
+    function activate() public onlyOwner {
+        require(!isTradingEnabled, "Trading is already enabled");
+        isTradingEnabled = true;
+    }
 
     function setAutomatedMarketMakerPair(address pair, bool value) public onlyOwner {
         require(automatedMarketMakerPairs[pair] != value, "AMM pair has been assigned!");

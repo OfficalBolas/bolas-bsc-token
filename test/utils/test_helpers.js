@@ -30,6 +30,7 @@ async function reinitializeTokenNoFees(accounts, account1Balance = 10000) {
     const token = await BOLAS.at(tokenDep.address);
     await token.excludeMultipleAccountsFromFees([accounts[1], accounts[2], accounts[3], accounts[4]], true, {from: accounts[0]});
     await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
+    await token.activate();
     return token;
 }
 
@@ -39,6 +40,7 @@ async function reinitializeTokenWithFees(accounts, account1Balance = 10000) {
     const tokenDep = await deployments.get('BOLAS');
     const token = await BOLAS.at(tokenDep.address);
     await token.transfer(accounts[1], tokenToRaw(account1Balance), {from: accounts[0]})
+    await token.activate();
     return token;
 }
 
