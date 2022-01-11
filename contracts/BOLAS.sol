@@ -123,6 +123,8 @@ contract BOLAS is ERC20, Ownable {
         uint256 dividendsETHAmount;
         // Amount ETH used for marketing.
         uint256 marketingETHAmount;
+        // Amount ETH used for apps.
+        uint256 appsETHAmount;
     }
 
     /*
@@ -262,6 +264,13 @@ contract BOLAS is ERC20, Ownable {
      */
     function taxApps() public view returns (uint16[6] memory) {
         return _taxApps;
+    }
+
+    /**
+     * @dev Returns total app tax values
+     */
+    function totalTaxApps() public view returns (uint16) {
+        return _totalTaxApps;
     }
 
     /**
@@ -526,7 +535,6 @@ contract BOLAS is ERC20, Ownable {
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
-            _transferTokens(sender, address(this), values.appFee);
             _burn(sender, values.burnFee);
         }
 
@@ -591,6 +599,9 @@ contract BOLAS is ERC20, Ownable {
         // process sending marketing fee
         sendEth(_marketingWallet, values.marketingETHAmount);
 
+        // process sending apps fee
+        sendEth(_appsWallet, values.appsETHAmount);
+
         // start swapping
         _inSwapAndLiquify = false;
     }
@@ -628,7 +639,7 @@ contract BOLAS is ERC20, Ownable {
       * outputs 1% as 100, 1.5% as 150
      */
     function _totalSwappableTax() private view returns (uint16) {
-        return _taxLiquify + _taxDividend + _taxMarketing;
+        return _taxLiquify + _taxDividend + _taxMarketing + _totalTaxApps;
     }
 
     /**
@@ -747,14 +758,13 @@ contract BOLAS is ERC20, Ownable {
             values.dividendFee = _calculateTax(values.amount, _taxDividend);
             values.liquifyFee = _calculateTax(values.amount, _taxLiquify);
             values.marketingFee = _calculateTax(values.amount, _taxMarketing);
-            values.totalFeeIntoContract = values.dividendFee + values.liquifyFee + values.marketingFee;
+            values.appFee = _calculateTax(values.amount, _totalTaxApps);
+            values.totalFeeIntoContract = values.dividendFee + values.liquifyFee + values.marketingFee + values.appFee;
 
             // fee to outside the contract
             values.burnFee = _calculateTax(values.amount, _taxBurn);
-            values.appFee = _calculateTax(values.amount, _totalTaxApps);
             // amount after fee
-            values.transferAmount =
-            values.amount - (values.totalFeeIntoContract + values.appFee + values.burnFee);
+            values.transferAmount = values.amount - (values.totalFeeIntoContract + values.burnFee);
         }
 
         return values;
@@ -772,12 +782,13 @@ contract BOLAS is ERC20, Ownable {
      */
     function getSwappingETHValues(uint256 ethAmount) public view returns (SwapingETHValues memory) {
         SwapingETHValues memory values;
-        uint16 totalTax = (_taxLiquify / 2) + _taxDividend + _taxMarketing;
+        uint16 totalTax = (_taxLiquify / 2) + _taxDividend + _taxMarketing + _totalTaxApps;
 
         values.dividendsETHAmount = _calculateSwappableTax(ethAmount, _taxDividend, totalTax);
         values.marketingETHAmount = _calculateSwappableTax(ethAmount, _taxMarketing, totalTax);
+        values.appsETHAmount = _calculateSwappableTax(ethAmount, _totalTaxApps, totalTax);
         // remaining ETH is as the liquidity half
-        values.liquidityETHAmount = ethAmount - (values.dividendsETHAmount + values.marketingETHAmount);
+        values.liquidityETHAmount = ethAmount - (values.dividendsETHAmount + values.marketingETHAmount + values.appsETHAmount);
 
         return values;
     }

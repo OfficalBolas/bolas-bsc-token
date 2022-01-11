@@ -1,6 +1,13 @@
 const testHelpers = require('./utils/test_helpers');
 const {fees} = require("./config/token_config");
-const {assertBigNumberEqual, tokenToRaw, percentToRaw, getEthBalance} = require("./utils/test_utils");
+const {
+    assertBigNumberEqual,
+    tokenToRaw,
+    percentToRaw,
+    getEthBalance,
+    toWei,
+    assertBigNumberGt
+} = require("./utils/test_utils");
 const {getNamedAccounts} = require("hardhat");
 let namedAccounts;
 let token;
@@ -9,6 +16,7 @@ contract('BOLAS FEES TEST', (accounts) => {
     before(async () => {
         namedAccounts = await getNamedAccounts();
         token = await testHelpers.reinitializeTokenWithFees(accounts);
+        await testHelpers.setupLiquidity(token, accounts);
     })
 
     // CREATION
@@ -26,6 +34,7 @@ contract('BOLAS FEES TEST', (accounts) => {
 
     it('transfers: should transfer without fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
         token = await testHelpers.reinitializeTokenWithFees(accounts);
+        await testHelpers.setupLiquidity(token, accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[0]});
         const balance = await token.balanceOf(accounts[2]);
         assertBigNumberEqual(balance, tokenToRaw(10000))
@@ -33,6 +42,7 @@ contract('BOLAS FEES TEST', (accounts) => {
 
     it('transfers: balances match after transfer with fees', async () => {
         token = await testHelpers.reinitializeTokenWithFees(accounts);
+        await testHelpers.setupLiquidity(token, accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
         assertBigNumberEqual(balance, tokenToRaw(10000))
@@ -50,6 +60,8 @@ contract('BOLAS FEES TEST', (accounts) => {
 
     // Isolated fees
     it('isolated fees: app taxes should be correctly initialized', async () => {
+        const percentToSet = fees.appFees[0];
+        await token.setTaxApps(0, percentToRaw(percentToSet));
         const appTaxList = await token.taxApps();
         for (let i = 0; i < 6; i++) {
             assertBigNumberEqual(appTaxList[i], percentToRaw(fees.appFees[i]));
@@ -64,5 +76,40 @@ contract('BOLAS FEES TEST', (accounts) => {
     it('isolated fees: marketing taxes should be correctly initialized', async () => {
         const marketingTax = await token.taxMarketing();
         assertBigNumberEqual(marketingTax, percentToRaw(fees.marketingFee));
+    });
+
+    // wallet balances
+    it('isolated fees: marketing wallet has BNB', async () => {
+        const liquidityWallet = await getEthBalance(namedAccounts.marketingWallet);
+        assertBigNumberEqual(liquidityWallet, '10000000000000000000000');
+    });
+    it('isolated fees: apps wallet has BNB', async () => {
+        const liquidityWallet = await getEthBalance(namedAccounts.appWallet);
+        assertBigNumberEqual(liquidityWallet, '10000000000000000000000');
+    });
+
+    // Do some swaps
+    it('Buying tokens for 0.3 ETH should work', async () => {
+        token = await testHelpers.reinitializeTokenWithFees(accounts);
+        await testHelpers.setupLiquidity(token, accounts);
+        await testHelpers.buyTokens(token, 0.3, accounts[1]);
+        const balance = await token.balanceOf(accounts[1])
+        assert.ok(balance);
+    });
+
+    it('Selling 80,000,000 tokens for ETH should work', async () => {
+        await testHelpers.sellTokens(token, 80_000_000, accounts[1]);
+        const balance = await token.balanceOf(accounts[1])
+        assert.ok(balance);
+    });
+
+    // wallet balances
+    it('isolated fees: marketing wallet has BNB', async () => {
+        const liquidityWallet = await getEthBalance(namedAccounts.marketingWallet);
+        assertBigNumberGt(liquidityWallet, toWei(0));
+    });
+    it('isolated fees: apps wallet has BNB', async () => {
+        const liquidityWallet = await getEthBalance(namedAccounts.appWallet);
+        assertBigNumberGt(liquidityWallet, toWei(0));
     });
 })
