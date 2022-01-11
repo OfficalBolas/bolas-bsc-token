@@ -12,10 +12,15 @@ const updateDividendTracker = 'updateDividendTracker'
 
 // deployment
 module.exports = async ({getNamedAccounts, network, deployments}) => {
-    const isHardhat = network.name !== 'hardhat';
+    const isHardhat = network.name === 'hardhat';
     const gasConfig = networkConfigs[network.name].gasConfig;
     const {deploy, execute, get} = deployments;
-    const {deployer, appWallet, marketingWallet, liquidityWallet} = await getNamedAccounts();
+    const {
+        deployer,
+        appWallet,
+        marketingWallet,
+        liquidityWallet
+    } = await getNamedAccountsOfNetwork(getNamedAccounts, network);
 
     // deploy IterableMapping
     const iterableMapping = await deploy(IterableMapping, {
@@ -40,11 +45,23 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
     await execute(BOLASDividendTracker, {from: deployer, ...gasConfig}, transferOwnership, bolas.address);
     await execute(BOLAS, {from: deployer, ...gasConfig}, updateDividendTracker, dividendTracker.address);
 
-    if (isHardhat) {
+    if (!isHardhat) {
         console.log(`Deployment completed at: ${new Date().toLocaleString()}`);
         console.log(`IterableMapping was deployed at:\n${iterableMapping.address}`);
         console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`);
         console.log(`BOLAS token was deployed at:\n${bolas.address}`);
     }
 };
+
+async function getNamedAccountsOfNetwork(getNamedAccounts, network) {
+    if (network.name === 'hardhat') return getNamedAccounts();
+    if (network.name === 'testnet') return getNamedAccounts();
+    if (network.name === 'production') return {
+        deployer: '0xD7B759635dac72b921D42E1841902715105337f4',
+        liquidityWallet: '0xD7B759635dac72b921D42E1841902715105337f4',
+        appWallet: '0xc3A5e3AeD9c83C8d3D2d45e50C1b0258dBc4c420',
+        marketingWallet: '0xd876Ec4C7608cb6A010412B72dD2f24Ad398d0E7',
+    }
+}
+
 module.exports.tags = [BOLAS];
