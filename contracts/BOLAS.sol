@@ -502,7 +502,8 @@ contract BOLAS is ERC20, Ownable {
 
         if (!isTradingEnabled) {
             //turn transfer on to allow for whitelist
-            require(canTransferBeforeTradingIsEnabled[sender], "Trading is not enabled yet");
+            require(canTransferBeforeTradingIsEnabled[sender]
+                || canTransferBeforeTradingIsEnabled[recipient], "Trading is not enabled yet");
         }
 
         _beforeTokenTransfer(sender, recipient, amount);
