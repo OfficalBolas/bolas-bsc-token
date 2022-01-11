@@ -206,15 +206,15 @@ contract BOLAS is ERC20, Ownable {
         dividendTracker = BOLASDividendTracker(payable(dividendTrackerAddress_));
 
         // exclude internals
-        dividendTracker.excludeFromDividends(address(dividendTracker), true);
-        dividendTracker.excludeFromDividends(address(this), true);
-        dividendTracker.excludeFromDividends(owner(), true);
-        dividendTracker.excludeFromDividends(address(uniswapV2Router), true);
+        _tryExcludeFromDividends(address(dividendTracker));
+        _tryExcludeFromDividends(address(this));
+        _tryExcludeFromDividends(owner());
+        _tryExcludeFromDividends(address(uniswapV2Router));
 
         // exclude wallets
-        dividendTracker.excludeFromDividends(_appsWallet, true);
-        dividendTracker.excludeFromDividends(_marketingWallet, true);
-        dividendTracker.excludeFromDividends(_liquidityWallet, true);
+        _tryExcludeFromDividends(_appsWallet);
+        _tryExcludeFromDividends(_marketingWallet);
+        _tryExcludeFromDividends(_liquidityWallet);
     }
 
     /**
@@ -435,7 +435,7 @@ contract BOLAS is ERC20, Ownable {
      */
     function _transferOwnership(address newOwner) internal override {
         super._transferOwnership(newOwner);
-        if (address(dividendTracker) != address(0)) dividendTracker.excludeFromDividends(newOwner, true);
+        _tryExcludeFromDividends(newOwner);
         canTransferBeforeTradingIsEnabled[newOwner] = true;
         excludeAccountFromFee(newOwner);
     }
