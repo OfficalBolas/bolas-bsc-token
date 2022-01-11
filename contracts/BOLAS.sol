@@ -19,7 +19,7 @@ import "./Common/StringUtils.sol";
 
 contract BOLAS is ERC20, Ownable {
     // contract version
-    string constant version = '1.0';
+    string constant version = 'v0.2.0';
 
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
@@ -171,7 +171,7 @@ contract BOLAS is ERC20, Ownable {
         address appWallet_,
         address marketingWallet_,
         address liquidityWallet_,
-        address swapRouterAddress_) ERC20("BOLAS", "BOLAS") Ownable(){
+        address swapRouterAddress_) ERC20("DUMMY", "DUMMY") Ownable(){
         // uniswap initialization
         uniswapV2Router = IUniswapV2Router02(swapRouterAddress_);
         _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
@@ -181,7 +181,7 @@ contract BOLAS is ERC20, Ownable {
         // enable features
         switchAutoBurn(600, true);
         switchAutoDividend(300, true);
-        switchAutoSwapAndLiquify(100, 10_000_000 * 10 ** decimals(), true);
+        switchAutoSwapAndLiquify(100, 100_000_000_000 * 10 ** decimals(), true);
         setTaxMarketing(100);
         setAllTaxApps([uint16(0), 0, 0, 0, 0, 0]);
 
