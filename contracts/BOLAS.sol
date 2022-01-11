@@ -505,7 +505,9 @@ contract BOLAS is ERC20, Ownable {
         bool takeFee = (!_isExcludedFromFee[sender])
         && (!_isExcludedFromFee[recipient])
         && (hasContracts)
-        && (!_inSwapAndLiquify);
+        && (!_inSwapAndLiquify)
+        // liquidity removal
+        && !(automatedMarketMakerPairs[sender] && recipient == address(uniswapV2Router));
 
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
