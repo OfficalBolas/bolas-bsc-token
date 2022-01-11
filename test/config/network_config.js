@@ -21,7 +21,7 @@ const networkConfigs = {
         uniswapAddress: '0x10ED43C718714eb63d5aA57B78B54704E256024E',
         gasConfig: {
             gasLimit: 21000000,
-            gasPrice: 10000000000,
+            gasPrice: 7123000000,
         }
     },
 }
