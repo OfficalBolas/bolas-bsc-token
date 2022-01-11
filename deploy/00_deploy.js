@@ -11,7 +11,7 @@ const transferOwnership = 'transferOwnership'
 const updateDividendTracker = 'updateDividendTracker'
 
 // deployment
-module.exports = async ({getNamedAccounts, network, deployments}) => {
+module.exports = async ({getNamedAccounts, network, deployments, run}) => {
     const isHardhat = network.name === 'hardhat';
     const gasConfig = networkConfigs[network.name].gasConfig;
     const {deploy, execute, get} = deployments;
@@ -37,10 +37,11 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
     });
 
     // deploy BOLAS contract
+    const constructorArguments = [appWallet, marketingWallet, liquidityWallet, networkConfigs[network.name].uniswapAddress];
     const bolas = await deploy(BOLAS, {
         from: deployer, ...gasConfig,
         skipIfAlreadyDeployed: false,
-        args: [appWallet, marketingWallet, liquidityWallet, networkConfigs[network.name].uniswapAddress],
+        args: constructorArguments,
     });
     await execute(BOLASDividendTracker, {from: deployer, ...gasConfig}, transferOwnership, bolas.address);
     await execute(BOLAS, {from: deployer, ...gasConfig}, updateDividendTracker, dividendTracker.address);
@@ -50,6 +51,13 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
         console.log(`IterableMapping was deployed at:\n${iterableMapping.address}`);
         console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`);
         console.log(`BOLAS token was deployed at:\n${bolas.address}`);
+    }
+    // Verify contract
+    if (!isHardhat) {
+        await run("verify:verify", {
+            address: bolas.address,
+            constructorArguments: constructorArguments,
+        });
     }
 };
 

@@ -4,6 +4,7 @@ specifiers:
   '@babel/core': ^7.16.7
   '@ethersproject/hardware-wallets': ^5.0.14
   '@nomiclabs/hardhat-ethers': ^2.0.0
+  '@nomiclabs/hardhat-etherscan': ^3.0.0
   '@nomiclabs/hardhat-truffle5': ^2.0.3
   '@nomiclabs/hardhat-waffle': ^2.0.1
   '@nomiclabs/hardhat-web3': ^2.0.0
@@ -36,6 +37,7 @@ devDependencies:
   '@babel/core': 7.16.7
   '@ethersproject/hardware-wallets': 5.5.0
   '@nomiclabs/hardhat-ethers': 2.0.3_ethers@5.5.2+hardhat@2.8.0
+  '@nomiclabs/hardhat-etherscan': 3.0.0_hardhat@2.8.0
   '@nomiclabs/hardhat-truffle5': 2.0.3_0a4407318be3491cd397a03d6eeab970
   '@nomiclabs/hardhat-waffle': 2.0.1_b5edb2070812aa32af4b3ffe4f4a52ce
   '@nomiclabs/hardhat-web3': 2.0.0_hardhat@2.8.0+web3@1.6.1
@@ -1965,6 +1967,23 @@ packages:
     dependencies:
       ethers: 5.5.2
       hardhat: 2.8.0
+    dev: true
+
+  /@nomiclabs/hardhat-etherscan/3.0.0_hardhat@2.8.0:
+    resolution: { integrity: sha512-E5s35dCHmzuY6pFqlgTdDGQr2xIyUJ3f91m6e7HYlPGz0FGzad9Nem/y0L7L3FHG4LPYg1UObkQVUzqBjtyAOA== }
+    peerDependencies:
+      hardhat: ^2.0.4
+    dependencies:
+      '@ethersproject/abi': 5.5.0
+      '@ethersproject/address': 5.5.0
+      cbor: 5.2.0
+      debug: 4.3.2
+      fs-extra: 7.0.1
+      hardhat: 2.8.0
+      node-fetch: 2.6.6
+      semver: 6.3.0
+    transitivePeerDependencies:
+      - supports-color
     dev: true
 
   /@nomiclabs/hardhat-truffle5/2.0.3_0a4407318be3491cd397a03d6eeab970:

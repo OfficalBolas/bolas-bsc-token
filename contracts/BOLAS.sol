@@ -194,7 +194,7 @@ contract BOLAS is ERC20, Ownable {
         updateLiquidityWallet(liquidityWallet_);
 
         // Add initial supply to sender
-        _mint(msg.sender, 160_000_000_000_000 * 10 ** decimals());
+        _mint(msg.sender, 192_000_000_000_000 * 10 ** decimals());
     }
 
     // allow the contract to receive ETH

@@ -3,6 +3,7 @@
  */
 require('@nomiclabs/hardhat-waffle');
 require("@nomiclabs/hardhat-truffle5");
+require("@nomiclabs/hardhat-etherscan");
 require('hardhat-deploy');
 const {forking} = require("./test/config/network_config");
 const fs = require("fs");
@@ -40,6 +41,13 @@ module.exports = {
                 mnemonic: mnemonic,
             },
         },
+    },
+    etherscan: {
+        apiKey: {
+            // binance smart chain
+            bsc: "27C7T2PBAPH1PQ8HI8MFGT4BYH8D6SZ1P1",
+            bscTestnet: "27C7T2PBAPH1PQ8HI8MFGT4BYH8D6SZ1P1",
+        }
     },
     solidity: {
         version: "0.8.2",
