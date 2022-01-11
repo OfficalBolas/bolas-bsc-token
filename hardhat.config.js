@@ -32,6 +32,14 @@ module.exports = {
                 mnemonic: mnemonic,
             },
         },
+        production: {
+            url: `https://bsc-dataseed.binance.org/`,
+            network_id: 56,
+            loggingEnabled: true,
+            accounts: {
+                mnemonic: mnemonic,
+            },
+        },
     },
     solidity: {
         version: "0.8.2",
