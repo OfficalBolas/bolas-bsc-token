@@ -4,7 +4,6 @@ pragma solidity ^0.8.2;
 // OpenZeppelin libs
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/utils/Strings.sol";
 // UniSwap libs
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
@@ -12,9 +11,6 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 // Dividend tracker
 import "./DividendTracker/BOLASDividendTracker.sol";
-// Utils
-import "hardhat/console.sol";
-import "./Common/StringUtils.sol";
 
 contract BOLAS is ERC20, Ownable {
     // contract version
