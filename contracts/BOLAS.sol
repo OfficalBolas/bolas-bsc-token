@@ -14,7 +14,7 @@ import "./DividendTracker/BOLASDividendTracker.sol";
 
 contract BOLAS is ERC20, Ownable {
     // contract version
-    string constant version = 'v1.0.1';
+    string constant version = 'v1.0.2';
 
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
