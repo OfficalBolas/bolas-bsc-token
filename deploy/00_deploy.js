@@ -52,13 +52,6 @@ module.exports = async ({getNamedAccounts, network, deployments, run}) => {
         console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`);
         console.log(`BOLAS token was deployed at:\n${bolas.address}`);
     }
-    // Verify contract
-    if (!isHardhat) {
-        await run("verify:verify", {
-            address: bolas.address,
-            constructorArguments: constructorArguments,
-        });
-    }
 };
 
 async function getNamedAccountsOfNetwork(getNamedAccounts, network) {
