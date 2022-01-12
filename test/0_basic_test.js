@@ -38,9 +38,10 @@ contract('BOLAS GENERAL TEST', (accounts) => {
     })
 
     it('transfers: should handle zero-transfers normally', async () => {
-        await token.transfer(accounts[6], tokenToRaw(0), {from: accounts[1]})
-        const balance = await token.balanceOf(accounts[6])
-        assertBigNumberEqual(balance, tokenToRaw(0))
+        const balanceBefore = await token.balanceOf(accounts[2])
+        await token.transfer(accounts[2], tokenToRaw(0), {from: accounts[1]})
+        const balance = await token.balanceOf(accounts[2])
+        assertBigNumberEqual(balance, balanceBefore)
     })
 
     // NOTE: testing uint256 wrapping is impossible since you can't supply > 2^256 -1
