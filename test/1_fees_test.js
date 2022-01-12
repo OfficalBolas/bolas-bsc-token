@@ -51,7 +51,7 @@ contract('BOLAS FEES TEST', (accounts) => {
     // total supply & burnt
     it('total supply: total supply should not be reduced because no burns', async () => {
         const totalSupply = await token.totalSupply();
-        assertBigNumberEqual(totalSupply, '160000000000000000000000000000000');
+        assertBigNumberEqual(totalSupply, '192000000000000000000000000000000');
     });
     it('total burnt: total burnt should be 0 because no fees yet', async () => {
         const totalBurnt = await token.totalBurnt();

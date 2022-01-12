@@ -108,8 +108,8 @@ contract('BOLAS SWAP TEST', (accounts) => {
     // total supply & burnt
     it('total supply: total supply should be reduced after burns', async () => {
         const totalSupply = await token.totalSupply();
-        assertBigNumberGt(totalSupply, '150000000000000000000000000000000');
-        assertBigNumberLt(totalSupply, '170000000000000000000000000000000');
+        assertBigNumberGt(totalSupply, '190000000000000000000000000000000');
+        assertBigNumberLt(totalSupply, '192000000000000000000000000000000');
     });
     it('total burnt: total burnt should be reduced after burns', async () => {
         const totalBurnt = await token.totalBurnt();

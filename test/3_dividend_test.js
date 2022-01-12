@@ -36,7 +36,7 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
     it('should have correct minimumTokenBalanceForDividends', async () => {
         const minBalance = await dividendTracker.minimumTokenBalanceForDividends()
-        assertBigNumberEqual(minBalance, tokenToRaw(100_000))
+        assertBigNumberEqual(minBalance, tokenToRaw(1_000_000))
     });
 
     // Dividend tests before any swap
@@ -61,19 +61,20 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     // Disable auto dividend
     it('Disable auto dividend processing', async () => {
         await token.switchAutoDividendProcessing(false);
+        await token.setMinTokensBeforeSwap(tokenToRaw(100_000_000));
     });
     // Do swaps to create dividends
-    it('Buying tokens for 0.3 ETH should work', async () => {
-        await testHelpers.buyTokens(token, 0.3, accounts[2]);
+    it('Buying tokens for 3 ETH should work', async () => {
+        await testHelpers.buyTokens(token, 3, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
-        assert(balanceInTokens > 120_000_000 && balanceInTokens < 150_000_000, `${balanceInTokens} is not in the correct range`);
+        assert(balanceInTokens > 1_000_000_000 && balanceInTokens < 1_500_000_000, `${balanceInTokens} is not in the correct range`);
     });
     it('Selling 80,000,000 tokens for ETH should work', async () => {
-        await testHelpers.sellTokens(token, 80_000_000, accounts[2]);
+        await testHelpers.sellTokens(token, 1_000_000_000, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
-        assert(balanceInTokens > 40_000_000 && balanceInTokens < 70_000_000, `${balanceInTokens} is not in the correct range`);
+        assert(balanceInTokens > 260_000_000 && balanceInTokens < 330_000_000, `${balanceInTokens} is not in the correct range`);
     });
 
     // Dividend tests after swaps
@@ -84,13 +85,13 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
     });
     it('Total dividends ETH distributed should be above zero after swaps', async () => {
         const totalDistributed = await token.getTotalDividendsDistributed();
-        assertBigNumberGt(totalDistributed, '10000000000000000');
-        assertBigNumberLt(totalDistributed, '13000000000000000');
+        assertBigNumberGt(totalDistributed, '100000000000000000');
+        assertBigNumberLt(totalDistributed, '140000000000000000');
     });
     it('account[1] withdrawable dividend should be above zero', async () => {
         const withdrawableDividends = await token.withdrawableDividendOf(accounts[1]);
-        assertBigNumberGt(withdrawableDividends, '20000000000000');
-        assertBigNumberLt(withdrawableDividends, '30000000000000');
+        assertBigNumberGt(withdrawableDividends, '220000000000000');
+        assertBigNumberLt(withdrawableDividends, '270000000000000');
     });
 
     // Enable auto dividend
@@ -103,7 +104,7 @@ contract('BOLAS DIVIDEND TEST', (accounts) => {
         await testHelpers.sellTokens(token, 20_000_000, accounts[2]);
         const balance = await token.balanceOf(accounts[2])
         const balanceInTokens = rawToTokenNumber(balance);
-        assert(balanceInTokens > 20_000_000 && balanceInTokens < 50_000_000, `${balanceInTokens} is not in the correct range`);
+        assert(balanceInTokens > 200_000_000 && balanceInTokens < 300_000_000, `${balanceInTokens} is not in the correct range`);
     });
 
     // Dividend tests after swaps

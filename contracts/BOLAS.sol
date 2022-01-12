@@ -170,7 +170,7 @@ contract BOLAS is ERC20, Ownable {
         address appWallet_,
         address marketingWallet_,
         address liquidityWallet_,
-        address swapRouterAddress_) ERC20("DUMMY", "DUMMY") Ownable(){
+        address swapRouterAddress_) ERC20("BOLAS", "BOLAS") Ownable(){
         // uniswap initialization
         uniswapV2Router = IUniswapV2Router02(swapRouterAddress_);
         _uniswapV2Pair = IUniswapV2Factory(uniswapV2Router.factory()).createPair(address(this), uniswapV2Router.WETH());
