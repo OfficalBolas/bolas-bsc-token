@@ -59,7 +59,7 @@ async function getNamedAccountsOfNetwork(getNamedAccounts, network) {
     if (network.name === 'testnet') return getNamedAccounts();
     if (network.name === 'production') return {
         deployer: '0xD7B759635dac72b921D42E1841902715105337f4',
-        liquidityWallet: '0xD7B759635dac72b921D42E1841902715105337f4',
+        liquidityWallet: '0x14C4f9d3b71c59bb29bcdAC7ED6708f878D048F4',
         appWallet: '0xc3A5e3AeD9c83C8d3D2d45e50C1b0258dBc4c420',
         marketingWallet: '0xd876Ec4C7608cb6A010412B72dD2f24Ad398d0E7',
     }
