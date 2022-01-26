@@ -17,7 +17,7 @@ let token;
 
 contract('BOLAS SWAP TEST', (accounts) => {
     before(async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts, 100000000);
+        token = await testHelpers.reinitializeToken(accounts, 100000000);
     });
 
     it('Uniswap router exists', async () => {

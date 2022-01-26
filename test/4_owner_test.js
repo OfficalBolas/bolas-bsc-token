@@ -17,7 +17,7 @@ let token;
 
 contract('BOLAS OWNER TEST', (accounts) => {
     before(async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts, 0);
+        token = await testHelpers.reinitializeToken(accounts, 0);
         await testHelpers.setupLiquidity(token, accounts);
     });
 
@@ -40,7 +40,7 @@ contract('BOLAS OWNER TEST', (accounts) => {
     });
 
     it('Token ownership is transfered to account[2]', async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts, 0);
+        token = await testHelpers.reinitializeToken(accounts, 0);
         await testHelpers.setupLiquidity(token, accounts);
         await token.transferOwnership(accounts[2], {from: accounts[0]});
         const owner = await token.owner();

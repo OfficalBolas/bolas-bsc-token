@@ -5,7 +5,7 @@ let token;
 
 contract('BOLAS LAB TEST', (accounts) => {
     before(async () => {
-        token = await testHelpers.reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
     });
 
     // META DATA

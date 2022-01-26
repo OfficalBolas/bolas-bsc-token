@@ -5,7 +5,7 @@ let token;
 
 contract('BOLAS GENERAL TEST', (accounts) => {
     before(async () => {
-        token = await testHelpers.reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
     });
 
     // META DATA
@@ -49,7 +49,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
 
     // APPROVALS
     it('approvals: msg.sender should approve 100 to accounts[1]', async () => {
-        token = await testHelpers.reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await token.approve(accounts[2], tokenToRaw(100), {from: accounts[1]})
         const allowance = await token.allowance(accounts[1], accounts[2])
         assertBigNumberEqual(allowance, tokenToRaw(100))
@@ -75,7 +75,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
     })
     // should approve 100 of msg.sender & withdraw 50, twice. (should succeed)
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 twice.', async () => {
-        token = await testHelpers.reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await token.approve(accounts[2], tokenToRaw(100), {from: accounts[1]})
         const allowance01 = await token.allowance(accounts[1], accounts[2])
         assertBigNumberEqual(allowance01, tokenToRaw(100))
@@ -105,7 +105,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
 
     // should approve 100 of msg.sender & withdraw 50 & 60 (should fail).
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 50 & 60 (2nd tx should fail)', async () => {
-        token = await testHelpers.reinitializeTokenNoFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await token.approve(accounts[2], tokenToRaw(100), {from: accounts[1]})
         const allowance01 = await token.allowance(accounts[1], accounts[2])
         assertBigNumberEqual(allowance01, tokenToRaw(100))

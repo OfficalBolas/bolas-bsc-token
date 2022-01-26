@@ -18,7 +18,7 @@ let dividendTracker;
 
 contract('BOLAS DIVIDEND TEST', (accounts) => {
     before(async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts, 100_000_000);
+        token = await testHelpers.reinitializeToken(accounts, 100_000_000);
         await testHelpers.setupLiquidity(token, accounts);
         dividendTracker = await BOLASDividendTracker.at(await token.dividendTracker())
     });

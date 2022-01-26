@@ -15,7 +15,7 @@ let token;
 contract('BOLAS FEES TEST', (accounts) => {
     before(async () => {
         namedAccounts = await getNamedAccounts();
-        token = await testHelpers.reinitializeTokenWithFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await testHelpers.setupLiquidity(token, accounts);
     })
 
@@ -33,7 +33,7 @@ contract('BOLAS FEES TEST', (accounts) => {
     })
 
     it('transfers: should transfer without fees 10000 to accounts[1] with accounts[0] having 10000', async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await testHelpers.setupLiquidity(token, accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[0]});
         const balance = await token.balanceOf(accounts[2]);
@@ -41,7 +41,7 @@ contract('BOLAS FEES TEST', (accounts) => {
     })
 
     it('transfers: balances match after transfer with fees', async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await testHelpers.setupLiquidity(token, accounts);
         await token.transfer(accounts[2], tokenToRaw(10000), {from: accounts[1]});
         const balance = await token.balanceOf(accounts[2]);
@@ -90,7 +90,7 @@ contract('BOLAS FEES TEST', (accounts) => {
 
     // Do some swaps
     it('Buying tokens for 0.3 ETH should work', async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts);
+        token = await testHelpers.reinitializeToken(accounts);
         await testHelpers.setupLiquidity(token, accounts);
         await testHelpers.buyTokens(token, 0.3, accounts[1]);
         const balance = await token.balanceOf(accounts[1])

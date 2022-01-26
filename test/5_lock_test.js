@@ -17,7 +17,7 @@ let token;
 
 contract('BOLAS LOCK TEST', (accounts) => {
     before(async () => {
-        token = await testHelpers.reinitializeTokenWithFees(accounts, 10_000, false);
+        token = await testHelpers.reinitializeToken(accounts, 10_000, false);
         await testHelpers.setupLiquidity(token, accounts);
     });
 
