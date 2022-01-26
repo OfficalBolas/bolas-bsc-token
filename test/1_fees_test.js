@@ -1,5 +1,5 @@
-const testHelpers = require('./utils/test_helpers');
-const {fees} = require("./config/token_config");
+const testHelpers = require('./helpers/test_helpers');
+const {fees} = require("../config/token_config");
 const {
     assertBigNumberEqual,
     tokenToRaw,
@@ -7,7 +7,7 @@ const {
     getEthBalance,
     toWei,
     assertBigNumberGt
-} = require("./utils/test_utils");
+} = require("./helpers/test_utils");
 const {getNamedAccounts} = require("hardhat");
 let namedAccounts;
 let token;

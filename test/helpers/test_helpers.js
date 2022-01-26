@@ -6,7 +6,7 @@ const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
 const BOLAS = artifacts.require('BOLAS');
 const BOLASDividendTracker = artifacts.require('BOLASDividendTracker');
 const {deployments, network, getNamedAccounts} = require('hardhat');
-const {forking} = require("../config/network_config");
+const {forking} = require("../../config/network_config");
 
 async function resetNetwork() {
     if (network.name !== 'hardhat') return;

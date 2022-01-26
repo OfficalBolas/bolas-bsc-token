@@ -1,5 +1,5 @@
-const {networkConfigs} = require("../test/config/network_config");
-const {uniswap} = require("../test/config/token_config");
+const {networkConfigs} = require("../config/network_config");
+const {uniswap} = require("../config/token_config");
 
 // Contract literals
 const BOLAS = 'BOLAS'

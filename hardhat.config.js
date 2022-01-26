@@ -5,7 +5,7 @@ require('@nomiclabs/hardhat-waffle');
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-deploy');
-const {forking} = require("./test/config/network_config");
+const {forking} = require("./config/network_config");
 const fs = require("fs");
 const mnemonic = fs.readFileSync(".secret").toString().trim();
 

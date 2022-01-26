@@ -3,8 +3,8 @@ const BOLASDividendTracker = artifacts.require('BOLASDividendTracker');
 const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
 const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
 const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
-const testHelpers = require('./utils/test_helpers');
-const {fees, slippageTolerance} = require("./config/token_config");
+const testHelpers = require('./helpers/test_helpers');
+const {fees, slippageTolerance} = require("../config/token_config");
 const {
     assertBigNumberEqual,
     tokenToRaw,
@@ -12,7 +12,7 @@ const {
     rawToTokenNumber,
     getEthBalance,
     assertBigNumberGt, assertBigNumberLt, fromWei
-} = require("./utils/test_utils");
+} = require("./helpers/test_utils");
 let token;
 let dividendTracker;
 

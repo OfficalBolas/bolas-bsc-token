@@ -1,6 +1,6 @@
-const testUtils = require('./utils/test_utils');
-const testHelpers = require('./utils/test_helpers');
-const {assertBigNumberEqual, rawToToken} = require("./utils/test_utils");
+const testUtils = require('./helpers/test_utils');
+const testHelpers = require('./helpers/test_helpers');
+const {assertBigNumberEqual, rawToToken} = require("./helpers/test_utils");
 let token;
 
 contract('BOLAS LAB TEST', (accounts) => {
