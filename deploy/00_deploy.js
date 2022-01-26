@@ -1,5 +1,4 @@
 const {networkConfigs} = require("../config/network_config");
-const {uniswap} = require("../config/token_config");
 
 // Contract literals
 const BOLAS = 'BOLAS'
@@ -11,7 +10,7 @@ const transferOwnership = 'transferOwnership'
 const updateDividendTracker = 'updateDividendTracker'
 
 // deployment
-module.exports = async ({getNamedAccounts, network, deployments, run}) => {
+module.exports = async ({getNamedAccounts, network, deployments}) => {
     const isHardhat = network.name === 'hardhat';
     const gasConfig = networkConfigs[network.name].gasConfig;
     const {deploy, execute, get} = deployments;
@@ -54,6 +53,7 @@ module.exports = async ({getNamedAccounts, network, deployments, run}) => {
     }
 };
 
+// returns wallets required depends on the network
 async function getNamedAccountsOfNetwork(getNamedAccounts, network) {
     if (network.name === 'hardhat') return getNamedAccounts();
     if (network.name === 'testnet') return getNamedAccounts();
