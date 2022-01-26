@@ -13,7 +13,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         const balance = await token.balanceOf(accounts[1])
         assertBigNumberEqual(balance, tokenToRaw(10000))
     })
-    it('creation: test correct setting of vanity information', async () => {
+    it('creation: test correct setting of meta information', async () => {
         const name = await token.name()
         assert.strictEqual(name, 'BOLAS')
 
@@ -44,9 +44,6 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         assertBigNumberEqual(balance, balanceBefore)
     })
 
-    // NOTE: testing uint256 wrapping is impossible since you can't supply > 2^256 -1
-    // todo: transfer max amounts
-
     // APPROVALS
     it('approvals: msg.sender should approve 100 to accounts[1]', async () => {
         token = await testHelpers.reinitializeToken(accounts);
@@ -54,7 +51,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         const allowance = await token.allowance(accounts[1], accounts[2])
         assertBigNumberEqual(allowance, tokenToRaw(100))
     })
-    // bit overkill. But is for testing a bug
+
     it('approvals: msg.sender approves accounts[2] of 100 & withdraws 20 once.', async () => {
         const balance0 = await token.balanceOf(accounts[1])
         assertBigNumberEqual(balance0, tokenToRaw(10000))
@@ -73,6 +70,7 @@ contract('BOLAS GENERAL TEST', (accounts) => {
         const balance4 = await token.balanceOf(accounts[1])
         assertBigNumberEqual(balance4, tokenToRaw(9980))
     })
+
     // should approve 100 of msg.sender & withdraw 50, twice. (should succeed)
     it('approvals: msg.sender approves accounts[1] of 100 & withdraws 20 twice.', async () => {
         token = await testHelpers.reinitializeToken(accounts);

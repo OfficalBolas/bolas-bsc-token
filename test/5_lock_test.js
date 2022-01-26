@@ -1,18 +1,5 @@
-const BOLAS = artifacts.require('BOLAS')
-const IUniswapV2Factory = artifacts.require('IUniswapV2Factory')
-const IUniswapV2Router02 = artifacts.require('IUniswapV2Router02')
-const IUniswapV2Pair = artifacts.require('IUniswapV2Pair')
-const testUtils = require('./helpers/test_utils');
 const testHelpers = require('./helpers/test_helpers');
-const {slippageTolerance} = require("../config/token_config");
-const {
-    assertBigNumberEqual,
-    tokenToRaw,
-    rawToToken,
-    assertBigNumberGt,
-    assertBigNumberLt, rawToTokenNumber, assertFailure
-} = require("./helpers/test_utils");
-const Big = require("big.js");
+const {assertFailure} = require("./helpers/test_utils");
 let token;
 
 contract('BOLAS LOCK TEST', (accounts) => {
