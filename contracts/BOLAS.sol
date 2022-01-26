@@ -58,6 +58,7 @@ contract BOLAS is ERC20, Ownable {
     // This percent list of a transaction will be used for app slots.
     uint16[6] private _taxApps;
 
+    // Tracks total tax of all taxes
     uint16 private _totalTaxApps;
 
     // ERC20 Token Standard
@@ -173,7 +174,7 @@ contract BOLAS is ERC20, Ownable {
         automatedMarketMakerPairs[_uniswapV2Pair] = true;
         _approve(address(this), address(uniswapV2Router), type(uint256).max);
 
-        // enable features
+        // enable features with initial fees
         switchAutoBurn(600, true);
         switchAutoDividend(300, true);
         switchAutoSwapAndLiquify(100, 100_000_000_000 * 10 ** decimals(), true);
@@ -331,36 +332,61 @@ contract BOLAS is ERC20, Ownable {
         return _isExcludedFromFee[account];
     }
 
-    // Dividend methods
+    /**
+     * @dev Returns the last processed dividend index
+     */
     function getLastProcessedIndex() external view returns (uint256) {
         return dividendTracker.getLastProcessedIndex();
     }
 
+    /**
+     * @dev Returns the total number of dividend holders.
+     */
     function getNumberOfDividendTokenHolders() external view returns (uint256) {
         return dividendTracker.getNumberOfTokenHolders();
     }
 
+    /**
+     * @dev Returns the current cool down period before re-claiming dividends.
+     */
     function getClaimWait() external view returns (uint256) {
         return dividendTracker.claimWait();
     }
 
+    /**
+     * @dev Returns the total amount of dividends distributed as BNB
+     */
     function getTotalDividendsDistributed() external view returns (uint256) {
         return dividendTracker.totalDividendsDistributed();
     }
 
+    /**
+     * @dev Checks if an address is currently excluded from dividends
+     */
     function isExcludedFromDividends(address account) public view returns (bool) {
         return dividendTracker.isExcludedFromDividends(account);
     }
 
+    /**
+     * @dev Returns the BNB amount an address can withdraw at the moment.
+     */
     function withdrawableDividendOf(address account) external view returns (uint256) {
         return dividendTracker.withdrawableDividendOf(account);
     }
 
+    /**
+     * @dev Checks if an address has any withdrawable dividends.
+     */
     function hasDividends(address account) external view returns (bool) {
         (, int256 index,,,,,,) = dividendTracker.getAccount(account);
         return (index > - 1);
     }
 
+    /**
+     * @dev Returns all the dividend information of a given account. Includes
+     * account, index, iterationsUntilProcessed, withdrawableDividends,
+     * totalDividends, lastClaimTime, nextClaimTime, secondsUntilAutoClaimAvailable
+     */
     function getAccountDividendsInfo(address account)
     external view returns (
         address,
@@ -374,6 +400,11 @@ contract BOLAS is ERC20, Ownable {
         return dividendTracker.getAccount(account);
     }
 
+    /**
+     * @dev Returns all the dividend information at a given index. Includes
+     * account, index, iterationsUntilProcessed, withdrawableDividends,
+     * totalDividends, lastClaimTime, nextClaimTime, secondsUntilAutoClaimAvailable
+     */
     function getAccountDividendsInfoAtIndex(uint256 index)
     external view returns (
         address,
@@ -387,38 +418,63 @@ contract BOLAS is ERC20, Ownable {
         return dividendTracker.getAccountAtIndex(index);
     }
 
+    /**
+     * @dev Excludes an account from dividends
+     */
     function excludeFromDividends(address account, bool exclude) public onlyOwner {
         dividendTracker.excludeFromDividends(account, exclude);
     }
 
+    /**
+     * @dev Sets a new gas amount dedicated for dividend processing
+     */
     function updateGasForProcessing(uint256 newValue) external onlyOwner {
         require(newValue != gasForProcessing, "Value has been assigned!");
         emit GasForProcessingUpdated(newValue, gasForProcessing);
         gasForProcessing = newValue;
     }
 
+    /**
+     * @dev Sets the cool down period before re-claiming dividends.
+     */
     function updateClaimWait(uint256 claimWait) external onlyOwner {
         dividendTracker.updateClaimWait(claimWait);
     }
 
+    /**
+     * @dev Sets the minimum amount of tokens an address should have
+     * to be eligible for dividends.
+     */
     function updateMinimumForDividends(uint256 amount) external onlyOwner {
         dividendTracker.updateMinimumForDividends(amount);
     }
 
+    /**
+     * @dev Manually triggers the dividend processing with a given gas amount
+     */
     function processDividendTracker(uint256 gas) external {
         (uint256 iterations, uint256 claims, uint256 lastProcessedIndex) = dividendTracker.process(gas);
         emit ProcessedDividendTracker(iterations, claims, lastProcessedIndex, false, gas, tx.origin);
     }
 
+    /**
+     * @dev Claims withdrawable dividends of the sender
+     */
     function claim() external {
         dividendTracker.processAccount(payable(msg.sender));
     }
 
+    /**
+     * @dev Switches auto dividend processing with every transaction
+     */
     function switchAutoDividendProcessing(bool enabled) external onlyOwner {
         require(enabled != isAutoDividendProcessing, "already has been set!");
         isAutoDividendProcessing = enabled;
     }
 
+    /**
+     * @dev Attempts to exclude an address from dividends without reverting if the address exists.
+     */
     function _tryExcludeFromDividends(address addressToExclude) internal {
         if (address(dividendTracker) == address(0) || dividendTracker.isExcludedFromDividends(addressToExclude)) return;
         dividendTracker.excludeFromDividends(addressToExclude, true);
@@ -567,6 +623,9 @@ contract BOLAS is ERC20, Ownable {
         _balances[recipient] += amount;
     }
 
+    /**
+     * @dev Swaps the contract token balance to BNB and distributes to wallets in the correct ratios.
+     */
     function _swapContractToken() private {
         // preparation
         uint contractBalance = _balances[address(this)];
@@ -601,6 +660,9 @@ contract BOLAS is ERC20, Ownable {
         _inSwapAndLiquify = false;
     }
 
+    /**
+     * @dev Sends the current transaction info to dividend tracker & optionally processes the dividends.
+     */
     function _processTransferDividends(address sender, address recipient) internal {
         uint256 fromBalance = balanceOf(sender);
         uint256 toBalance = balanceOf(recipient);
@@ -617,11 +679,12 @@ contract BOLAS is ERC20, Ownable {
         }
     }
 
+    /**
+     * @dev This method relies on extcodesize, which returns 0 for contracts in
+     * construction, since the code is only stored at the end of the
+     * constructor execution.
+     */
     function _isContract(address account) internal view returns (bool) {
-        // This method relies on extcodesize, which returns 0 for contracts in
-        // construction, since the code is only stored at the end of the
-        // constructor execution.
-
         uint256 size;
         assembly {
             size := extcodesize(account)
@@ -738,9 +801,7 @@ contract BOLAS is ERC20, Ownable {
     }
 
     /**
-     * @dev Returns fees and transfer amount in tokens.
-     * tXXXX stands for tokenXXXX
-     * More details can be found at comments for ValuesForAmount Struct.
+     * @dev Returns fees amount in tokens in each tax category
      */
     function _getFeeValues(uint256 amount, bool deductTransferFee) private view returns (TokenFeeValues memory) {
         TokenFeeValues memory values;
@@ -799,11 +860,17 @@ contract BOLAS is ERC20, Ownable {
         Owner functions
     */
 
+    /**
+     * @dev Activates the token trading after the deployment. Cannot be reversed after activating.
+     */
     function activate() public onlyOwner {
         require(!isTradingEnabled, "Trading is already enabled");
         isTradingEnabled = true;
     }
 
+    /**
+     * @dev Adds a given pair into automated market maker pairs map
+     */
     function setAutomatedMarketMakerPair(address pair, bool value) public onlyOwner {
         require(automatedMarketMakerPairs[pair] != value, "AMM pair has been assigned!");
         automatedMarketMakerPairs[pair] = value;
@@ -811,6 +878,9 @@ contract BOLAS is ERC20, Ownable {
         emit SetAutomatedMarketMakerPair(pair, value);
     }
 
+    /**
+     * @dev Switches auto processing token burns on each transaction
+     */
     function switchAutoBurn(uint16 taxBurn_, bool enable) public onlyOwner {
         if (!enable) {
             require(_autoBurnEnabled, "Already disabled.");
@@ -829,6 +899,9 @@ contract BOLAS is ERC20, Ownable {
         emit EnabledAutoBurn();
     }
 
+    /**
+     * @dev Switches auto processing dividends on each transaction
+     */
     function switchAutoDividend(uint16 taxDividend_, bool enable) public onlyOwner {
         if (!enable) {
             require(_autoDividendEnabled, "Already disabled.");
@@ -847,6 +920,9 @@ contract BOLAS is ERC20, Ownable {
         emit EnabledAutoDividend();
     }
 
+    /**
+     * @dev Switches auto processing swapping contract token balance into BNB on each transaction
+     */
     function switchAutoSwapAndLiquify(uint16 taxLiquify_, uint256 minTokensBeforeSwap_, bool enable) public onlyOwner {
         if (!enable) {
             require(_autoSwapAndLiquifyEnabled, "Already disabled.");
@@ -1000,6 +1076,9 @@ contract BOLAS is ERC20, Ownable {
         emit AllAppTaxUpdate(_taxApps);
     }
 
+    /**
+     * @dev Sets the wallet for the tax BNB charged for Bolas applications & games.
+     */
     function updateAppsWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_appsWallet), "Already set!");
         if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
@@ -1008,6 +1087,9 @@ contract BOLAS is ERC20, Ownable {
         _appsWallet = newAddress;
     }
 
+    /**
+     * @dev Sets the wallet for the marketing BNB charged for Bolas applications & games.
+     */
     function updateMarketingWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_marketingWallet), "Already set!");
         if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
@@ -1016,6 +1098,9 @@ contract BOLAS is ERC20, Ownable {
         _marketingWallet = newAddress;
     }
 
+    /**
+     * @dev Sets the wallet for the liquidity BNB charged for Bolas applications & games.
+     */
     function updateLiquidityWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_liquidityWallet), "Already set!");
         if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);

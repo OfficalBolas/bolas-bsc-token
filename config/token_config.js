@@ -9,9 +9,9 @@ const fees = {
 }
 const slippageTolerance = {
     minBuySlippage: 10,
-    maxBuySlippage: 13,
+    maxBuySlippage: 14,
     minSellSlippage: 10,
-    maxSellSlippage: 15,
+    maxSellSlippage: 14,
 }
 
 module.exports = {
