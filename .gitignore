@@ -57,5 +57,5 @@ allFiredEvents
 # hardhat
 cache
 artifacts
-.secret
+.env
 deployments/

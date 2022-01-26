@@ -5,9 +5,8 @@ require('@nomiclabs/hardhat-waffle');
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-deploy');
+require('dotenv').config();
 const {forking} = require("./config/network_config");
-const fs = require("fs");
-const mnemonic = fs.readFileSync(".secret").toString().trim();
 
 module.exports = {
     defaultNetwork: 'hardhat',
@@ -30,7 +29,7 @@ module.exports = {
             network_id: 97,
             loggingEnabled: true,
             accounts: {
-                mnemonic: mnemonic,
+                mnemonic: process.env.MNEMONIC,
             },
         },
         production: {
@@ -38,15 +37,15 @@ module.exports = {
             network_id: 56,
             loggingEnabled: true,
             accounts: {
-                mnemonic: mnemonic,
+                mnemonic: process.env.MNEMONIC,
             },
         },
     },
     etherscan: {
         apiKey: {
             // binance smart chain
-            bsc: "27C7T2PBAPH1PQ8HI8MFGT4BYH8D6SZ1P1",
-            bscTestnet: "27C7T2PBAPH1PQ8HI8MFGT4BYH8D6SZ1P1",
+            bsc: process.env.BSC_API_KEY,
+            bscTestnet: process.env.BSC_API_KEY,
         }
     },
     solidity: {
