@@ -1110,4 +1110,18 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         emit UpdateLiquidityWallet(newAddress, address(_liquidityWallet));
         _liquidityWallet = newAddress;
     }
+
+    // STAKING SECTION
+    /**
+    * Add functionality like burn to the _stake function
+    *
+    */
+    function stake(uint256 _amount) public {
+        // Make sure staker actually is good for it
+        require(_amount < _balances[msg.sender], "DevToken: Cannot stake more than you own");
+
+        _stake(_amount);
+        // Burn the amount of tokens on the sender
+        _burn(msg.sender, _amount);
+    }
 }
