@@ -7,6 +7,7 @@ async function assertFailure(executor) {
     try {
         await executor();
     } catch (e) {
+        console.log(e)
         threw = true;
     }
     assert.equal(threw, true);
