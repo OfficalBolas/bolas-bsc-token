@@ -11,8 +11,10 @@ import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router01.sol";
 import "@uniswap/v2-periphery/contracts/interfaces/IUniswapV2Router02.sol";
 // Dividend tracker
 import "./DividendTracker/BOLASDividendTracker.sol";
+// Stakeable
+import "./Staking/Stakeable.sol";
 
-contract BOLAS is ERC20, Ownable {
+contract BOLAS is ERC20, Ownable, Stakeable {
     // contract version
     string constant version = 'v1.0.2';
 
