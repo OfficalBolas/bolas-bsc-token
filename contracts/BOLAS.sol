@@ -69,12 +69,6 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     // Total amount of tokens burnt.
     uint256 private _totalBurnt;
 
-    // Total amount of tokens locked in the LP (this token and WETH pair).
-    uint256 private _totalTokensLockedInLiquidity;
-
-    // Total amount of ETH locked in the LP (this token and WETH pair).
-    uint256 private _totalETHLockedInLiquidity;
-
     // A threshold for swap and liquify.
     uint256 private _minTokensBeforeSwap;
 
@@ -84,9 +78,9 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     // whether the token can already be traded
     bool public isTradingEnabled;
 
-    bool private _autoSwapAndLiquifyEnabled;
-    bool private _autoBurnEnabled;
-    bool private _autoDividendEnabled;
+    bool public autoSwapAndLiquifyEnabled;
+    bool public autoBurnEnabled;
+    bool public autoDividendEnabled;
 
     // Dividend states
     BOLASDividendTracker public dividendTracker;
@@ -286,20 +280,6 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     }
 
     /**
-    * @dev Returns true if auto burn feature is enabled.
-     */
-    function autoBurnEnabled() public view returns (bool) {
-        return _autoBurnEnabled;
-    }
-
-    /**
-     * @dev Returns true if auto swap and liquify feature is enabled.
-     */
-    function autoSwapAndLiquifyEnabled() public view returns (bool) {
-        return _autoSwapAndLiquifyEnabled;
-    }
-
-    /**
      * @dev Returns the threshold before swap and liquify.
      */
     function minTokensBeforeSwap() external view returns (uint256) {
@@ -314,20 +294,6 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     }
 
     /**
-     * @dev Returns the total number of tokens locked in the LP.
-     */
-    function totalTokensLockedInLiquidity() external view returns (uint256) {
-        return _totalTokensLockedInLiquidity;
-    }
-
-    /**
-     * @dev Returns the total number of ETH locked in the LP.
-     */
-    function totalETHLockedInLiquidity() external view returns (uint256) {
-        return _totalETHLockedInLiquidity;
-    }
-
-    /**
      * @dev Returns whether an account is excluded from fee.
      */
     function isExcludedFromFee(address account) external view returns (bool) {
@@ -335,24 +301,10 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     }
 
     /**
-     * @dev Returns the last processed dividend index
-     */
-    function getLastProcessedIndex() external view returns (uint256) {
-        return dividendTracker.getLastProcessedIndex();
-    }
-
-    /**
      * @dev Returns the total number of dividend holders.
      */
     function getNumberOfDividendTokenHolders() external view returns (uint256) {
         return dividendTracker.getNumberOfTokenHolders();
-    }
-
-    /**
-     * @dev Returns the current cool down period before re-claiming dividends.
-     */
-    function getClaimWait() external view returns (uint256) {
-        return dividendTracker.claimWait();
     }
 
     /**
@@ -382,42 +334,6 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     function hasDividends(address account) external view returns (bool) {
         (, int256 index,,,,,,) = dividendTracker.getAccount(account);
         return (index > - 1);
-    }
-
-    /**
-     * @dev Returns all the dividend information of a given account. Includes
-     * account, index, iterationsUntilProcessed, withdrawableDividends,
-     * totalDividends, lastClaimTime, nextClaimTime, secondsUntilAutoClaimAvailable
-     */
-    function getAccountDividendsInfo(address account)
-    external view returns (
-        address,
-        int256,
-        int256,
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256) {
-        return dividendTracker.getAccount(account);
-    }
-
-    /**
-     * @dev Returns all the dividend information at a given index. Includes
-     * account, index, iterationsUntilProcessed, withdrawableDividends,
-     * totalDividends, lastClaimTime, nextClaimTime, secondsUntilAutoClaimAvailable
-     */
-    function getAccountDividendsInfoAtIndex(uint256 index)
-    external view returns (
-        address,
-        int256,
-        int256,
-        uint256,
-        uint256,
-        uint256,
-        uint256,
-        uint256) {
-        return dividendTracker.getAccountAtIndex(index);
     }
 
     /**
@@ -595,7 +511,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         if (
             (hasContracts)
             && (!automatedMarketMakerPairs[sender])
-            && (_autoSwapAndLiquifyEnabled)
+            && (autoSwapAndLiquifyEnabled)
             && (!_inSwapAndLiquify)
         ) _swapContractToken();
 
@@ -885,17 +801,17 @@ contract BOLAS is ERC20, Ownable, Stakeable {
      */
     function switchAutoBurn(uint16 taxBurn_, bool enable) public onlyOwner {
         if (!enable) {
-            require(_autoBurnEnabled, "Already disabled.");
+            require(autoBurnEnabled, "Already disabled.");
             setTaxBurn(0);
-            _autoBurnEnabled = false;
+            autoBurnEnabled = false;
 
             emit DisabledAutoBurn();
             return;
         }
-        require(!_autoBurnEnabled, "Already enabled.");
+        require(!autoBurnEnabled, "Already enabled.");
         require(taxBurn_ > 0, "Tax must be greater than 0.");
 
-        _autoBurnEnabled = true;
+        autoBurnEnabled = true;
         setTaxBurn(taxBurn_);
 
         emit EnabledAutoBurn();
@@ -906,17 +822,17 @@ contract BOLAS is ERC20, Ownable, Stakeable {
      */
     function switchAutoDividend(uint16 taxDividend_, bool enable) public onlyOwner {
         if (!enable) {
-            require(_autoDividendEnabled, "Already disabled.");
+            require(autoDividendEnabled, "Already disabled.");
             setTaxDividend(0);
-            _autoDividendEnabled = false;
+            autoDividendEnabled = false;
 
             emit DisabledAutoDividend();
             return;
         }
-        require(!_autoDividendEnabled, "Already enabled.");
+        require(!autoDividendEnabled, "Already enabled.");
         require(taxDividend_ > 0, "Tax must be greater than 0.");
 
-        _autoDividendEnabled = true;
+        autoDividendEnabled = true;
         setTaxDividend(taxDividend_);
 
         emit EnabledAutoDividend();
@@ -927,18 +843,18 @@ contract BOLAS is ERC20, Ownable, Stakeable {
      */
     function switchAutoSwapAndLiquify(uint16 taxLiquify_, uint256 minTokensBeforeSwap_, bool enable) public onlyOwner {
         if (!enable) {
-            require(_autoSwapAndLiquifyEnabled, "Already disabled.");
+            require(autoSwapAndLiquifyEnabled, "Already disabled.");
             setTaxLiquify(0);
-            _autoSwapAndLiquifyEnabled = false;
+            autoSwapAndLiquifyEnabled = false;
             emit DisabledAutoSwapAndLiquify();
             return;
         }
 
-        require(!_autoSwapAndLiquifyEnabled, "Already enabled.");
+        require(!autoSwapAndLiquifyEnabled, "Already enabled.");
         require(taxLiquify_ > 0, "Tax must be greater than 0.");
 
         _minTokensBeforeSwap = minTokensBeforeSwap_;
-        _autoSwapAndLiquifyEnabled = true;
+        autoSwapAndLiquifyEnabled = true;
         setTaxLiquify(taxLiquify_);
 
         emit EnabledAutoSwapAndLiquify();
@@ -973,7 +889,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       * - total tax rate must be less than 100%.
       */
     function setTaxBurn(uint16 taxBurn_) public onlyOwner {
-        require(_autoBurnEnabled, "Auto burn not enabled");
+        require(autoBurnEnabled, "Auto burn not enabled");
         require(taxBurn_ + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxBurn;
@@ -993,7 +909,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       * - total tax rate must be less than 100%.
       */
     function setTaxDividend(uint16 taxDividend_) public onlyOwner {
-        require(_autoDividendEnabled, "Auto dividend not enabled");
+        require(autoDividendEnabled, "Auto dividend not enabled");
         require(_taxBurn + taxDividend_ + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxDividend;
@@ -1031,7 +947,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       * - total tax rate must be less than 100%.
       */
     function setTaxLiquify(uint16 taxLiquify_) public onlyOwner {
-        require(_autoSwapAndLiquifyEnabled, "Auto swap and liquify not enabled");
+        require(autoSwapAndLiquifyEnabled, "Auto swap and liquify not enabled");
         require(_taxBurn + _taxDividend + taxLiquify_ + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxLiquify;
@@ -1113,7 +1029,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
 
     // STAKING SECTION
     /**
-    * Add functionality like burn to the _stake function
+    * @dev Add functionality like burn to the _stake function
     *
     */
     function stake(uint256 _amount) public {
@@ -1123,5 +1039,15 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         _stake(_amount);
         // Burn the amount of tokens on the sender
         _burn(msg.sender, _amount);
+    }
+
+    /**
+    * @dev withdrawStake is used to withdraw stakes from the account holder
+    */
+    function withdrawStake(uint256 amount, uint256 stake_index) public {
+
+        uint256 amount_to_mint = _withdrawStake(amount, stake_index);
+        // Return staked tokens to user
+        _mint(msg.sender, amount_to_mint);
     }
 }
