@@ -37,10 +37,17 @@ contract('BOLAS STAKING TEST', (accounts) => {
         assert.strictEqual(stakedLog2.args.amount.toNumber(), stake_amount, "Stake amount in event was not correct")
         assert.strictEqual(stakedLog2.args.index.toNumber(), 1, "Stake index was not correct")
     });
+    it("Staked users are properly tracked", async () => {
+        const result0 = await token.hasStake(accounts[0], {from: accounts[0]});
+        const result2 = await token.hasStake(accounts[2], {from: accounts[0]});
+        assert.strictEqual(parseInt(result0[0]), 200, "Stake amount not correct")
+        assert.strictEqual(parseInt(result2[0]), 0, "Stake amount not correct")
+    });
 
     it("cannot stake more than owning", async () => {
         await assertFailure(() => token.stake(1000000000, {from: accounts[2]}));
     });
+
     it("new stakeholder should have increased index", async () => {
         let stake_amount = 100;
         const res = await token.stake(stake_amount, {from: accounts[1]});
