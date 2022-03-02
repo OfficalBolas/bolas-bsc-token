@@ -16,7 +16,7 @@ contract('BOLAS STAKING TEST', (accounts) => {
         // Stake 100 is used to stake 100 tokens twice and see that stake is added correctly and money burned
         let owner = accounts[0];
         // Set owner, user and a stake_amount
-        let stake_amount = 100;
+        let stake_amount = tokenToRaw(100);
         // Get init balance of user
         balance = await token.balanceOf(owner)
 
@@ -26,35 +26,41 @@ contract('BOLAS STAKING TEST', (accounts) => {
         // Assert on the emittedevent using truffleassert
         // This will capture the event and inside the event callback we can use assert on the values returned
         const stakedLog = res.logs.find(element => element.event.match('Staked'))
-        assert.strictEqual(stakedLog.args.amount.toNumber(), stake_amount, "Stake amount in event was not correct")
-        assert.strictEqual(stakedLog.args.index.toNumber(), 1, "Stake index was not correct")
+        assertBigNumberEqual(stakedLog.args.amount, stake_amount, "Stake amount in event was not correct")
+        assertBigNumberEqual(stakedLog.args.index.toNumber(), 1, "Stake index was not correct")
 
         // Stake again on owner because we want hasStake test to assert summary
         const res2 = await token.stake(stake_amount, {from: owner});
         // Assert on the emittedevent using truffleassert
         // This will capture the event and inside the event callback we can use assert on the values returned
         const stakedLog2 = res2.logs.find(element => element.event.match('Staked'))
-        assert.strictEqual(stakedLog2.args.amount.toNumber(), stake_amount, "Stake amount in event was not correct")
-        assert.strictEqual(stakedLog2.args.index.toNumber(), 1, "Stake index was not correct")
+        assertBigNumberEqual(stakedLog2.args.amount, stake_amount, "Stake amount in event was not correct")
+        assertBigNumberEqual(stakedLog2.args.index, 1, "Stake index was not correct")
     });
     it("Staked users are properly tracked", async () => {
         const result0 = await token.hasStake(accounts[0], {from: accounts[0]});
         const result2 = await token.hasStake(accounts[2], {from: accounts[0]});
-        assert.strictEqual(parseInt(result0[0]), 200, "Stake amount not correct")
-        assert.strictEqual(parseInt(result2[0]), 0, "Stake amount not correct")
+        assertBigNumberEqual(result0[0].toString(), tokenToRaw(200), "Stake amount not correct")
+        assertBigNumberEqual(result2[0].toString(), tokenToRaw(0), "Stake amount not correct")
     });
 
     it("cannot stake more than owning", async () => {
         await assertFailure(() => token.stake(1000000000, {from: accounts[2]}));
     });
 
-    it("new stakeholder should have increased index", async () => {
-        let stake_amount = 100;
+    it("New stakeholder should have increased index", async () => {
+        let stake_amount = tokenToRaw(100);
         const res = await token.stake(stake_amount, {from: accounts[1]});
         // Assert on the emittedevent using truffleassert
         // This will capture the event and inside the event callback we can use assert on the values returned
         const stakedLog = res.logs.find(element => element.event.match('Staked'))
-        assert.strictEqual(stakedLog.args.amount.toNumber(), stake_amount, "Stake amount in event was not correct")
-        assert.strictEqual(stakedLog.args.index.toNumber(), 2, "Stake index was not correct")
+        assertBigNumberEqual(stakedLog.args.amount, stake_amount, "Stake amount in event was not correct")
+        assertBigNumberEqual(stakedLog.args.index, 2, "Stake index was not correct")
     })
+
+    it("Staked users can withdraw", async () => {
+        await token.withdrawStake(tokenToRaw(40), 0, {from: accounts[1]});
+        const result1 = await token.hasStake(accounts[1], {from: accounts[1]});
+        assertBigNumberEqual(result1[0], tokenToRaw(60), "Stake amount not correct")
+    });
 })
