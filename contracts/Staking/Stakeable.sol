@@ -5,12 +5,16 @@ pragma solidity ^0.8.2;
 * @notice Stakeable is a contract who is ment to be inherited by other contract that wants Staking capabilities
 */
 contract Stakeable {
+
     /**
      * @dev
      * rewardPerHour is 1000 because it is used to represent 0.001, since we only use integer numbers
      * This will give users 0.1% reward for each staked token / H
      */
-    uint256 internal rewardPerHour = 1000;
+    uint256 public hourlyRewardFor7Days = 1000;
+    uint256 public hourlyRewardFor30Days = 2000;
+    uint256 public hourlyRewardFor90Days = 3000;
+    uint256 public hourlyRewardFor365Days = 4000;
     /**
      * @notice Constructor since this contract is not ment to be used without inheritance
      * push once to stakeholders for it to work proplerly
@@ -91,7 +95,7 @@ contract Stakeable {
     function _stake(uint256 _amount, uint256 _durationSec) internal {
         // Simple check so that user does not stake 0
         require(_amount > 0, "Cannot stake nothing");
-        require(_durationSec >= 1 days, "Stake duration must be at least one day");
+        require(_durationSec >= 7 days, "Stake duration must be at least one day");
 
 
         // Mappings in solidity creates all values, but empty, so we can just check the address
@@ -125,6 +129,17 @@ contract Stakeable {
         // the alghoritm is  seconds = block.timestamp - stake seconds (block.timestap - _stake.since)
         // hours = Seconds / 3600 (seconds /3600) 3600 is an variable in Solidity names hours
         // we then multiply each token by the hours staked , then divide by the rewardPerHour rate
+        uint256 rewardPerHour;
+        if (_current_stake.duration_sec >= 365 days) {
+            rewardPerHour = hourlyRewardFor365Days;
+        } else if (_current_stake.duration_sec >= 90 days) {
+            rewardPerHour = hourlyRewardFor90Days;
+        } else if (_current_stake.duration_sec >= 30 days) {
+            rewardPerHour = hourlyRewardFor30Days;
+        } else {
+            rewardPerHour = hourlyRewardFor7Days;
+        }
+
         return (((block.timestamp - _current_stake.since) / 1 hours) * _current_stake.amount) / rewardPerHour;
     }
 

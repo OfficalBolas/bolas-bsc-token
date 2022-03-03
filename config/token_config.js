@@ -15,7 +15,10 @@ const slippageTolerance = {
 }
 
 const staking = {
-    rewardPerHour: 1000,
+    hourlyRewardFor7Days: 0.001,
+    hourlyRewardFor30Days: 0.002,
+    hourlyRewardFor90Days: 0.003,
+    hourlyRewardFor365Days: 0.004,
 }
 
 module.exports = {

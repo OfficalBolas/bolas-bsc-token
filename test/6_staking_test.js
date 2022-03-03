@@ -1,5 +1,6 @@
 const testHelpers = require('./helpers/test_helpers');
 const {assertFailure, assertBigNumberEqual, tokenToRaw, bigNumber} = require("./helpers/test_utils");
+const {staking} = require("../config/token_config");
 let token;
 
 const DAY_SECONDS = 60 * 60 * 24;
@@ -86,7 +87,6 @@ contract('BOLAS STAKING TEST', (accounts) => {
 
     it("Checking withdrawable reward after 4 days", async () => {
         const delayDays = 4;
-        const rewardPerHour = 0.001;
 
         token = await testHelpers.reinitializeToken(accounts, 10_000, false);
 
@@ -95,7 +95,7 @@ contract('BOLAS STAKING TEST', (accounts) => {
         await testHelpers.timeTravelDays(delayDays);
         const result1 = await token.hasStake(accounts[1], {from: accounts[1]});
         const claimableReward = result1['stakes'][0]['claimable'];
-        assertBigNumberEqual(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayDays).mul(rewardPerHour * 24)), "Stake amount not correct")
+        assertBigNumberEqual(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayDays).mul(staking.hourlyRewardFor7Days * 24)), "Stake amount not correct")
     });
 
     it("Stake locking works", async () => {
