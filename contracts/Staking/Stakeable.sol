@@ -8,13 +8,11 @@ contract Stakeable {
 
     /**
      * @dev
-     * rewardPerHour is 1000 because it is used to represent 0.001, since we only use integer numbers
-     * This will give users 0.1% reward for each staked token / H
      */
-    uint256 public hourlyRewardFor7Days = 1000;
-    uint256 public hourlyRewardFor30Days = 2000;
-    uint256 public hourlyRewardFor90Days = 3000;
-    uint256 public hourlyRewardFor365Days = 4000;
+    uint256 public apy7Days = 200;
+    uint256 public apy30Days = 500;
+    uint256 public apy90Days = 1000;
+    uint256 public apy365Days = 2000;
     /**
      * @notice Constructor since this contract is not ment to be used without inheritance
      * push once to stakeholders for it to work proplerly
@@ -129,18 +127,18 @@ contract Stakeable {
         // the alghoritm is  seconds = block.timestamp - stake seconds (block.timestap - _stake.since)
         // hours = Seconds / 3600 (seconds /3600) 3600 is an variable in Solidity names hours
         // we then multiply each token by the hours staked , then divide by the rewardPerHour rate
-        uint256 rewardPerHour;
+        uint256 apyPercent;
         if (_current_stake.duration_sec >= 365 days) {
-            rewardPerHour = hourlyRewardFor365Days;
+            apyPercent = apy365Days;
         } else if (_current_stake.duration_sec >= 90 days) {
-            rewardPerHour = hourlyRewardFor90Days;
+            apyPercent = apy90Days;
         } else if (_current_stake.duration_sec >= 30 days) {
-            rewardPerHour = hourlyRewardFor30Days;
+            apyPercent = apy30Days;
         } else {
-            rewardPerHour = hourlyRewardFor7Days;
+            apyPercent = apy7Days;
         }
 
-        return (((block.timestamp - _current_stake.since) / 1 hours) * _current_stake.amount) / rewardPerHour;
+        return apyPercent * ((block.timestamp - _current_stake.since) * _current_stake.amount) / (1000 * 365 days);
     }
 
     function isStakeLocked(Stake memory _current_stake) internal view returns (bool){

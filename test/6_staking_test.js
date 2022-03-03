@@ -1,5 +1,11 @@
 const testHelpers = require('./helpers/test_helpers');
-const {assertFailure, assertBigNumberEqual, tokenToRaw, bigNumber} = require("./helpers/test_utils");
+const {
+    assertFailure,
+    assertBigNumberEqual,
+    tokenToRaw,
+    bigNumber,
+    assertBigNumberEqualApprox
+} = require("./helpers/test_utils");
 const {staking} = require("../config/token_config");
 let token;
 
@@ -71,7 +77,6 @@ contract('BOLAS STAKING TEST', (accounts) => {
 
     it("Checking withdrawable reward after 4 days", async () => {
         const delayDays = 4;
-        const rewardPerHour = 0.001;
 
         token = await testHelpers.reinitializeToken(accounts, 10_000, false);
 
@@ -81,7 +86,7 @@ contract('BOLAS STAKING TEST', (accounts) => {
         const result1 = await token.hasStake(accounts[1], {from: accounts[1]});
         const claimableReward = result1['stakes'][0]['claimable'];
         const isLocked = result1['stakes'][0]['locked'];
-        assertBigNumberEqual(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayDays).mul(rewardPerHour * 24)), "Stake amount not correct")
+        assertBigNumberEqualApprox(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy7Days)))
         assert.ok(isLocked);
     });
 
@@ -95,7 +100,7 @@ contract('BOLAS STAKING TEST', (accounts) => {
         await testHelpers.timeTravelDays(delayDays);
         const result1 = await token.hasStake(accounts[1], {from: accounts[1]});
         const claimableReward = result1['stakes'][0]['claimable'];
-        assertBigNumberEqual(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayDays).mul(staking.hourlyRewardFor7Days * 24)), "Stake amount not correct")
+        assertBigNumberEqualApprox(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy7Days)))
     });
 
     it("Stake locking works", async () => {
@@ -107,5 +112,23 @@ contract('BOLAS STAKING TEST', (accounts) => {
         const result2 = await token.hasStake(accounts[1], {from: accounts[1]});
         const isLocked2 = result2['stakes'][0]['locked'];
         assert.ok(!isLocked2);
+    });
+
+    it("Time based rewards work", async () => {
+        const delayDays = 4;
+        token = await testHelpers.reinitializeToken(accounts, 10_000, false);
+
+        const stake_amount = tokenToRaw(100);
+        await token.stake(stake_amount, DAY_SECONDS * 7, {from: accounts[1]});
+        await token.stake(stake_amount, DAY_SECONDS * 30, {from: accounts[1]});
+        await token.stake(stake_amount, DAY_SECONDS * 90, {from: accounts[1]});
+        await token.stake(stake_amount, DAY_SECONDS * 365, {from: accounts[1]});
+
+        await testHelpers.timeTravelDays(delayDays);
+        const stakeData = (await token.hasStake(accounts[1], {from: accounts[1]}))['stakes'];
+        assertBigNumberEqualApprox(stakeData[0]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy7Days)))
+        assertBigNumberEqualApprox(stakeData[1]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy30Days)))
+        assertBigNumberEqualApprox(stakeData[2]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy90Days)))
+        assertBigNumberEqualApprox(stakeData[3]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy365Days)))
     });
 })

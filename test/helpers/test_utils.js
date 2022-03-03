@@ -94,6 +94,12 @@ function assertBigNumberEqual(a, b) {
     assert(bigNumberEqual(a, b), `${a.toString()} != ${b.toString()}`);
 }
 
+function assertBigNumberEqualApprox(a, b, tolerance = 0.01) {
+    assert(bigNumber(a).mul(bigNumber(1 + tolerance)).gt(bigNumber(b))
+        !== bigNumber(a).mul(bigNumber(1 - tolerance)).gt(bigNumber(b)),
+        `${a.toString()} !~ ${b.toString()}`);
+}
+
 function assertBigNumberGt(a, b) {
     assert(bigNumberGt(a, b), `${a.toString()} <= ${b.toString()}`);
 }
@@ -124,6 +130,7 @@ module.exports = {
     rawToTokenNumber,
     bigNumberEqual,
     assertBigNumberEqual,
+    assertBigNumberEqualApprox,
     percentToRaw,
     assertBigNumberGt,
     assertBigNumberLt,
