@@ -97,6 +97,11 @@ async function timeTravelHours(delayHours) {
     await network.provider.send("evm_mine")
 }
 
+async function timeTravelDays(delayDays) {
+    await network.provider.send("evm_increaseTime", [delayDays * 3600 * 24])
+    await network.provider.send("evm_mine")
+}
+
 module.exports = {
     resetNetwork,
     getTransferAmount,
@@ -110,4 +115,5 @@ module.exports = {
     buyTokens,
     sellTokens,
     timeTravelHours,
+    timeTravelDays,
 }

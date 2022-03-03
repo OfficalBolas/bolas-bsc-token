@@ -1032,11 +1032,11 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     * @dev Add functionality like burn to the _stake function
     *
     */
-    function stake(uint256 _amount) public {
+    function stake(uint256 _amount, uint256 _durationSec) public {
         // Make sure staker actually is good for it
         require(_amount < _balances[msg.sender], "DevToken: Cannot stake more than you own");
 
-        _stake(_amount);
+        _stake(_amount, _durationSec);
         // Burn the amount of tokens on the sender
         _burn(msg.sender, _amount);
     }

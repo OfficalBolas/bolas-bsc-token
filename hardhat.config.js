@@ -22,7 +22,7 @@ module.exports = {
             chainId: 999,
             loggingEnabled: false,
             forking: forking,
-            allowUnlimitedContractSize: false,
+            allowUnlimitedContractSize: true,
         },
         testnet: {
             url: `https://data-seed-prebsc-1-s1.binance.org:8545`,

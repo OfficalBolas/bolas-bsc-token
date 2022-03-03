@@ -29,8 +29,10 @@ contract Stakeable {
         address user;
         uint256 amount;
         uint256 since;
+        uint256 duration_sec;
         // This claimable field is new and used to tell how big of a reward is currently available
         uint256 claimable;
+        bool locked;
     }
     /**
     * @notice Stakeholder is a staker that has active stakes
@@ -86,9 +88,10 @@ contract Stakeable {
     * _Stake is used to make a stake for an sender. It will remove the amount staked from the stakers account and place those tokens inside a stake container
     * StakeID
     */
-    function _stake(uint256 _amount) internal {
+    function _stake(uint256 _amount, uint256 _durationSec) internal {
         // Simple check so that user does not stake 0
         require(_amount > 0, "Cannot stake nothing");
+        require(_durationSec >= 1 days, "Stake duration must be at least one day");
 
 
         // Mappings in solidity creates all values, but empty, so we can just check the address
@@ -105,7 +108,7 @@ contract Stakeable {
 
         // Use the index to push a new Stake
         // push a newly created Stake with the current block timestamp.
-        stakeholders[index].address_stakes.push(Stake(msg.sender, _amount, timestamp, 0));
+        stakeholders[index].address_stakes.push(Stake(msg.sender, _amount, timestamp, _durationSec, 0, false));
         // Emit an event that the stake has occured
         emit Staked(msg.sender, _amount, index, timestamp);
     }
@@ -125,6 +128,10 @@ contract Stakeable {
         return (((block.timestamp - _current_stake.since) / 1 hours) * _current_stake.amount) / rewardPerHour;
     }
 
+    function isStakeLocked(Stake memory _current_stake) internal view returns (bool){
+        return block.timestamp - _current_stake.since < _current_stake.duration_sec;
+    }
+
     /**
  * @notice
      * withdrawStake takes in an amount and a index of the stake and will remove tokens from that stake
@@ -137,6 +144,7 @@ contract Stakeable {
         uint256 user_index = stakes[msg.sender];
         Stake memory current_stake = stakeholders[user_index].address_stakes[index];
         require(current_stake.amount >= amount, "Staking: Cannot withdraw more than you have staked");
+        require(!isStakeLocked(current_stake), "Staking: This stake is locked");
 
         // Calculate available Reward first before we start modifying data
         uint256 reward = calculateStakeReward(current_stake);
@@ -169,6 +177,7 @@ contract Stakeable {
         for (uint256 s = 0; s < summary.stakes.length; s += 1) {
             uint256 availableReward = calculateStakeReward(summary.stakes[s]);
             summary.stakes[s].claimable = availableReward;
+            summary.stakes[s].locked = isStakeLocked(summary.stakes[s]);
             totalStakeAmount = totalStakeAmount + summary.stakes[s].amount;
         }
         // Assign calculate amount to summary
