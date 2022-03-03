@@ -14,8 +14,13 @@ const slippageTolerance = {
     maxSellSlippage: 14,
 }
 
+const staking = {
+    rewardPerHour: 1000,
+}
+
 module.exports = {
     fees,
     slippageTolerance,
     decimals,
+    staking
 }

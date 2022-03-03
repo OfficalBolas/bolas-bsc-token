@@ -92,6 +92,11 @@ async function getTokenAmountForETH(token, ethMount) {
     return tokenRawAmount[1];
 }
 
+async function timeTravelHours(delayHours) {
+    await network.provider.send("evm_increaseTime", [delayHours * 3600])
+    await network.provider.send("evm_mine")
+}
+
 module.exports = {
     resetNetwork,
     getTransferAmount,
@@ -104,4 +109,5 @@ module.exports = {
     setupLiquidity,
     buyTokens,
     sellTokens,
+    timeTravelHours,
 }

@@ -1,5 +1,7 @@
 const testHelpers = require('./helpers/test_helpers');
-const {assertFailure, assertBigNumberEqual, tokenToRaw} = require("./helpers/test_utils");
+const {assertFailure, assertBigNumberEqual, tokenToRaw, bigNumberSub, bigNumber} = require("./helpers/test_utils");
+const {network} = require("hardhat");
+const {staking} = require("../config/token_config");
 let token;
 
 contract('BOLAS STAKING TEST', (accounts) => {
@@ -62,5 +64,19 @@ contract('BOLAS STAKING TEST', (accounts) => {
         await token.withdrawStake(tokenToRaw(40), 0, {from: accounts[1]});
         const result1 = await token.hasStake(accounts[1], {from: accounts[1]});
         assertBigNumberEqual(result1[0], tokenToRaw(60), "Stake amount not correct")
+    });
+
+    it("Checking withdrawable reward after 4 hours", async () => {
+        const delayHours = 4;
+        const rewardPerHour = 0.001;
+
+        token = await testHelpers.reinitializeToken(accounts, 10_000, false);
+
+        const stake_amount = tokenToRaw(100);
+        await token.stake(stake_amount, {from: accounts[1]});
+        await testHelpers.timeTravelHours(delayHours);
+        const result1 = await token.hasStake(accounts[1], {from: accounts[1]});
+        const claimableReward = result1['stakes'][0]['claimable'];
+        assertBigNumberEqual(claimableReward, bigNumber(stake_amount).mul(bigNumber(delayHours).mul(rewardPerHour)), "Stake amount not correct")
     });
 })

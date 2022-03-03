@@ -82,6 +82,14 @@ function bigNumberLte(a, b) {
     return new Big(a.toString()).lte(new Big(b.toString()));
 }
 
+function bigNumberSub(a, b) {
+    return new Big(a.toString()).sub(new Big(b.toString()));
+}
+
+function bigNumber(a) {
+    return new Big(a.toString());
+}
+
 function assertBigNumberEqual(a, b) {
     assert(bigNumberEqual(a, b), `${a.toString()} != ${b.toString()}`);
 }
@@ -121,4 +129,6 @@ module.exports = {
     assertBigNumberLt,
     assertBigNumberGte,
     assertBigNumberLte,
+    bigNumberSub,
+    bigNumber,
 }
