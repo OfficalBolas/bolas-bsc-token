@@ -5,6 +5,7 @@ const fees = {
     liquidityFee: 1,
     burnFee: 6,
     marketingFee: 1,
+    stakingFee: 2,
     appFees: [0, 0, 0, 0, 0, 0],
 }
 const slippageTolerance = {

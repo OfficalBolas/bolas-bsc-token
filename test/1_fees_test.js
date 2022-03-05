@@ -105,11 +105,15 @@ contract('BOLAS FEES TEST', (accounts) => {
 
     // wallet balances
     it('isolated fees: marketing wallet has BNB', async () => {
-        const liquidityWallet = await getEthBalance(namedAccounts.marketingWallet);
-        assertBigNumberGt(liquidityWallet, toWei(0));
+        const marketingWallet = await getEthBalance(namedAccounts.marketingWallet);
+        assertBigNumberGt(marketingWallet, toWei(0));
     });
     it('isolated fees: apps wallet has BNB', async () => {
         const liquidityWallet = await getEthBalance(namedAccounts.appWallet);
         assertBigNumberGt(liquidityWallet, toWei(0));
+    });
+    it('isolated fees: staking wallet has tokens', async () => {
+        const stakingWallet = await token.balanceOf(namedAccounts.stakingWallet)
+        assertBigNumberGt(stakingWallet, toWei(0));
     });
 })

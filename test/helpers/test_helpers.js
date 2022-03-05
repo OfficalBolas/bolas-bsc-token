@@ -64,8 +64,9 @@ function getTransferAmount(amount, config) {
     const liquidityAmount = amount * config.liquidityFee / 100;
     const burnAmount = amount * config.burnFee / 100;
     const marketingAmount = amount * config.marketingFee / 100;
+    const stakingAmount = amount * config.stakingFee / 100;
     const appAmount = amount * config.appFees.reduce((a, b) => a + b, 0) / 100;
-    return amount - (burnAmount + marketingAmount + taxAmount + liquidityAmount + appAmount);
+    return amount - (burnAmount + marketingAmount + taxAmount + liquidityAmount + appAmount + stakingAmount);
 }
 
 async function getTokenPairOfUniswapFactory(token) {

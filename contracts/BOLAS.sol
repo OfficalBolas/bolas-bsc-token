@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.2;
 
+import "hardhat/console.sol";
 // OpenZeppelin libs
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -42,6 +43,9 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     // Where marketing fee tokens are sent to.
     address private _marketingWallet;
 
+    // Where staking fee tokens are sent to.
+    address private _stakingWallet;
+
     // Where liquidity tokens are sent to.
     address private _liquidityWallet;
 
@@ -50,6 +54,9 @@ contract BOLAS is ERC20, Ownable, Stakeable {
 
     // This percent of a transaction sent to marketing.
     uint16 private _taxMarketing;
+
+    // This percent of a transaction for staking rewards.
+    uint16 private _taxStaking;
 
     // This percent of a transaction will be dividend.
     uint16 private _taxDividend;
@@ -95,6 +102,8 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         uint256 burnFee;
         // Amount tokens charged for marketing.
         uint256 marketingFee;
+        // Amount tokens charged for staking.
+        uint256 stakingFee;
         // Amount tokens charged for dividends.
         uint256 dividendFee;
         // Amount tokens charged to add to liquidity.
@@ -126,6 +135,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     event TaxBurnUpdate(uint16 previousTax, uint16 currentTax);
     event TaxDividendUpdate(uint16 previousTax, uint16 currentTax);
     event TaxMarketingUpdate(uint16 previousTax, uint16 currentTax);
+    event TaxStakingUpdate(uint16 previousTax, uint16 currentTax);
     event TaxLiquifyUpdate(uint16 previousTax, uint16 currentTax);
     event TaxAppUpdate(uint8 index, uint16 previousTax, uint16 currentTax);
     event AllAppTaxUpdate(uint16[6] appFees);
@@ -156,12 +166,14 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     event GasForProcessingUpdated(uint256 indexed newValue, uint256 indexed oldValue);
     event UpdateAppWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateMarketingWallet(address indexed newAddress, address indexed oldAddress);
+    event UpdateStakingWallet(address indexed newAddress, address indexed oldAddress);
     event UpdateLiquidityWallet(address indexed newAddress, address indexed oldAddress);
     event SetAutomatedMarketMakerPair(address indexed pair, bool indexed value);
 
     constructor(
         address appWallet_,
         address marketingWallet_,
+        address stakingWallet_,
         address liquidityWallet_,
         address swapRouterAddress_) ERC20("BOLAS", "BOLAS") Ownable(){
         // uniswap initialization
@@ -175,6 +187,8 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         switchAutoDividend(300, true);
         switchAutoSwapAndLiquify(100, 100_000_000_000 * 10 ** decimals(), true);
         setTaxMarketing(100);
+        setTaxMarketing(100);
+        setTaxStaking(200);
         setAllTaxApps([uint16(0), 0, 0, 0, 0, 0]);
 
         // exclude this contract from fee.
@@ -184,6 +198,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         // configure wallets
         updateAppsWallet(appWallet_);
         updateMarketingWallet(marketingWallet_);
+        updateStakingWallet(stakingWallet_);
         updateLiquidityWallet(liquidityWallet_);
 
         // Add initial supply to sender
@@ -242,6 +257,13 @@ contract BOLAS is ERC20, Ownable, Stakeable {
      */
     function taxMarketing() public view returns (uint16) {
         return _taxMarketing;
+    }
+
+    /**
+     * @dev Returns the current staking tax.
+     */
+    function taxStaking() public view returns (uint16) {
+        return _taxStaking;
     }
 
     /**
@@ -504,6 +526,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         TokenFeeValues memory values = _getFeeValues(amount, takeFee);
         if (takeFee) {
             _transferTokens(sender, address(this), values.totalFeeIntoContract);
+            _transferTokens(sender, _stakingWallet, values.stakingFee);
             _burn(sender, values.burnFee);
         }
 
@@ -737,8 +760,9 @@ contract BOLAS is ERC20, Ownable, Stakeable {
 
             // fee to outside the contract
             values.burnFee = _calculateTax(values.amount, _taxBurn);
+            values.stakingFee = _calculateTax(values.amount, _taxStaking);
             // amount after fee
-            values.transferAmount = values.amount - (values.totalFeeIntoContract + values.burnFee);
+            values.transferAmount = values.amount - (values.totalFeeIntoContract + values.burnFee + values.stakingFee);
         }
 
         return values;
@@ -890,7 +914,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       */
     function setTaxBurn(uint16 taxBurn_) public onlyOwner {
         require(autoBurnEnabled, "Auto burn not enabled");
-        require(taxBurn_ + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
+        require(taxBurn_ + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing + _taxStaking < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxBurn;
         _taxBurn = taxBurn_;
@@ -910,7 +934,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       */
     function setTaxDividend(uint16 taxDividend_) public onlyOwner {
         require(autoDividendEnabled, "Auto dividend not enabled");
-        require(_taxBurn + taxDividend_ + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
+        require(_taxBurn + taxDividend_ + _taxLiquify + _totalTaxApps + _taxMarketing + _taxStaking < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxDividend;
         _taxDividend = taxDividend_;
@@ -928,12 +952,30 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       * - total tax rate must be less than 100%.
       */
     function setTaxMarketing(uint16 taxMarketing_) public onlyOwner {
-        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + taxMarketing_ < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + taxMarketing_ + _taxStaking < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxMarketing;
         _taxMarketing = taxMarketing_;
 
         emit TaxMarketingUpdate(previousTax, taxMarketing_);
+    }
+
+    /**
+      * @dev Updates taxStaking
+      *
+      * Emits a {TaxStakingUpdate} event.
+      *
+      * Requirements:
+      *
+      * - total tax rate must be less than 100%.
+      */
+    function setTaxStaking(uint16 taxStaking_) public onlyOwner {
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing + taxStaking_ < 10000, "Tax fee too high.");
+
+        uint16 previousTax = _taxStaking;
+        _taxStaking = taxStaking_;
+
+        emit TaxStakingUpdate(previousTax, taxStaking_);
     }
 
     /**
@@ -948,7 +990,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
       */
     function setTaxLiquify(uint16 taxLiquify_) public onlyOwner {
         require(autoSwapAndLiquifyEnabled, "Auto swap and liquify not enabled");
-        require(_taxBurn + _taxDividend + taxLiquify_ + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + taxLiquify_ + _totalTaxApps + _taxMarketing + _taxStaking < 10000, "Tax fee too high.");
 
         uint16 previousTax = _taxLiquify;
         _taxLiquify = taxLiquify_;
@@ -975,7 +1017,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
             _totalTaxApps += _taxApps[i];
         }
 
-        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing + _taxStaking < 10000, "Tax fee too high.");
         emit TaxAppUpdate(index, previousTax, taxApp_);
     }
 
@@ -990,7 +1032,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         for (uint256 i = 0; i < 6; i++) _taxApps[i] = fees[i];
         _totalTaxApps = 0;
         for (uint8 i = 0; i < 6; i++) _totalTaxApps += _taxApps[i];
-        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing < 10000, "Tax fee too high.");
+        require(_taxBurn + _taxDividend + _taxLiquify + _totalTaxApps + _taxMarketing + _taxStaking < 10000, "Tax fee too high.");
         emit AllAppTaxUpdate(_taxApps);
     }
 
@@ -1006,7 +1048,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     }
 
     /**
-     * @dev Sets the wallet for the marketing BNB charged for Bolas applications & games.
+     * @dev Sets the wallet for the marketing BNB.
      */
     function updateMarketingWallet(address newAddress) public onlyOwner {
         require(newAddress != address(_marketingWallet), "Already set!");
@@ -1014,6 +1056,17 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         _tryExcludeFromDividends(newAddress);
         emit UpdateMarketingWallet(newAddress, address(_marketingWallet));
         _marketingWallet = newAddress;
+    }
+
+    /**
+     * @dev Sets the wallet for the staking bolas storage.
+     */
+    function updateStakingWallet(address newAddress) public onlyOwner {
+        require(newAddress != address(_stakingWallet), "Already set!");
+        if (!_isExcludedFromFee[newAddress]) excludeAccountFromFee(newAddress);
+        _tryExcludeFromDividends(newAddress);
+        emit UpdateStakingWallet(newAddress, address(_stakingWallet));
+        _stakingWallet = newAddress;
     }
 
     /**

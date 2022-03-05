@@ -18,7 +18,8 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
         deployer,
         appWallet,
         marketingWallet,
-        liquidityWallet
+        liquidityWallet,
+        stakingWallet,
     } = await getNamedAccountsOfNetwork(getNamedAccounts, network);
 
     // deploy IterableMapping
@@ -36,7 +37,7 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
     });
 
     // deploy BOLAS contract
-    const constructorArguments = [appWallet, marketingWallet, liquidityWallet, networkConfigs[network.name].uniswapAddress];
+    const constructorArguments = [appWallet, marketingWallet, stakingWallet, liquidityWallet, networkConfigs[network.name].uniswapAddress];
     const bolas = await deploy(BOLAS, {
         from: deployer, ...gasConfig,
         skipIfAlreadyDeployed: false,

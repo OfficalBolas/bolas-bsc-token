@@ -13,6 +13,7 @@ module.exports = {
     namedAccounts: {
         deployer: 0,
         tokenOwner: 0,
+        stakingWallet: 6,
         liquidityWallet: 7,
         marketingWallet: 8,
         appWallet: 9,
