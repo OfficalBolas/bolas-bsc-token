@@ -1,6 +1,7 @@
 /**
  * @type import('hardhat/config').HardhatUserConfig
  */
+require('hardhat-contract-sizer');
 require('@nomiclabs/hardhat-waffle');
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
@@ -23,7 +24,7 @@ module.exports = {
             chainId: 999,
             loggingEnabled: false,
             forking: forking,
-            allowUnlimitedContractSize: true,
+            allowUnlimitedContractSize: false,
         },
         testnet: {
             url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
@@ -54,11 +55,16 @@ module.exports = {
         settings: {
             optimizer: {
                 enabled: true,
-                runs: 9999
+                runs: 200
             }
         }
     },
     mocha: {
         timeout: 200000
     },
+    contractSizer: {
+        alphaSort: true,
+        runOnCompile: true,
+        strict: true,
+    }
 };
