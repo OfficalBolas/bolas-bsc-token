@@ -25,7 +25,7 @@ contract('BOLAS OWNER TEST', (accounts) => {
         await testHelpers.buyTokens(token, 0.3, accounts[1]);
         const balance = await token.balanceOf(accounts[1])
         const balanceInTokens = rawToTokenNumber(balance);
-        assertBigNumberGt(balanceInTokens, '130000000');
+        assertBigNumberGt(balanceInTokens, '120000000');
         assertBigNumberLt(balanceInTokens, '140000000');
     });
 

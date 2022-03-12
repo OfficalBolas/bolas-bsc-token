@@ -98,7 +98,8 @@ contract('BOLAS SWAP TEST', (accounts) => {
         console.log(`SWAPPING BALANCE CHANGE: BOLAS ${tokenBalanceDiff}`);
         console.log(`SWAPPING BALANCE CHANGE: ETH ${ethBalanceDiff}`);
         console.log(`SWAPPING SLIPPAGE: ${slippage}%`);
-        assert(slippage > slippageTolerance.minSellSlippage && slippage < slippageTolerance.maxSellSlippage);
+        assert(slippage > slippageTolerance.minSellSlippage);
+        assert(slippage < slippageTolerance.maxSellSlippage);
     });
 
     // total supply & burnt

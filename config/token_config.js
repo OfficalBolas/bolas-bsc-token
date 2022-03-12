@@ -9,10 +9,10 @@ const fees = {
     appFees: [0, 0, 0, 0, 0, 0],
 }
 const slippageTolerance = {
-    minBuySlippage: 10,
+    minBuySlippage: 11,
     maxBuySlippage: 14,
-    minSellSlippage: 10,
-    maxSellSlippage: 14,
+    minSellSlippage: 11,
+    maxSellSlippage: 16,
 }
 
 const staking = {
