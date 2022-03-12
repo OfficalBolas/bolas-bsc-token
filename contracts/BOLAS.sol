@@ -1108,8 +1108,8 @@ contract BOLAS is BEP20, Stakeable {
     */
     function withdrawStake(uint256 amount, uint256 stake_index) public {
 
-        uint256 amount_to_mint = _withdrawStake(amount, stake_index);
+        uint256 amount_to_withdraw = _withdrawStake(amount, stake_index);
         // Return staked tokens to user
-        _mint(msg.sender, amount_to_mint);
+        _transferTokens(_stakingWallet, msg.sender, amount_to_withdraw);
     }
 }

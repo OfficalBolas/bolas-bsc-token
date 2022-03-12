@@ -60,11 +60,11 @@ module.exports = {
         }
     },
     mocha: {
-        timeout: 200000
+        timeout: 2000000
     },
     contractSizer: {
         alphaSort: true,
-        runOnCompile: true,
+        runOnCompile: false,
         strict: true,
     }
 };

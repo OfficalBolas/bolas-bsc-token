@@ -1,10 +1,6 @@
 const testHelpers = require('./helpers/test_helpers');
 const {
-    assertFailure,
-    assertBigNumberEqual,
-    tokenToRaw,
-    bigNumber,
-    assertBigNumberEqualApprox
+    assertFailure, assertBigNumberEqual, tokenToRaw, bigNumber, assertBigNumberEqualApprox, rawToTokenNumber
 } = require("./helpers/test_utils");
 const {staking} = require("../config/token_config");
 let token;
@@ -16,6 +12,7 @@ contract('BOLAS STAKING TEST', (accounts) => {
     before(async () => {
         token = await testHelpers.reinitializeToken(accounts, 10_000, false);
         await testHelpers.setupLiquidity(token, accounts);
+        await token.transfer(accounts[6], tokenToRaw(10000), {from: accounts[0]})
     });
 
     it('creation: should create an initial balance of 10000 for the creator', async () => {
@@ -117,6 +114,7 @@ contract('BOLAS STAKING TEST', (accounts) => {
     it("Time based rewards work", async () => {
         const delayDays = 4;
         token = await testHelpers.reinitializeToken(accounts, 10_000, false);
+        await token.transfer(accounts[6], tokenToRaw(10000), {from: accounts[0]})
 
         const stake_amount = tokenToRaw(100);
         await token.stake(stake_amount, DAY_SECONDS * 7, {from: accounts[1]});
@@ -130,5 +128,27 @@ contract('BOLAS STAKING TEST', (accounts) => {
         assertBigNumberEqualApprox(stakeData[1]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy30Days)))
         assertBigNumberEqualApprox(stakeData[2]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy90Days)))
         assertBigNumberEqualApprox(stakeData[3]['claimable'], bigNumber(stake_amount).mul(bigNumber(delayDays / 365).mul(staking.apy365Days)))
+    });
+
+    it("Staking claiming works", async () => {
+        // Attempt withdrawing before completing
+        const stakeData = (await token.hasStake(accounts[1], {from: accounts[1]}))['stakes'];
+        const amount = stakeData[0]['amount'];
+        const delayDays = stakeData[0]['duration_sec'] / DAY_SECONDS;
+        await assertFailure(() => token.withdrawStake(amount, 0, {from: accounts[1]}));
+
+
+        // Time travel
+        await testHelpers.timeTravelDays(delayDays);
+
+        // Attempt withdrawing after time travel
+        const stakeData2 = (await token.hasStake(accounts[1], {from: accounts[1]}))['stakes'];
+        const claimable2 = stakeData2[0]['claimable'];
+        const amount2 = stakeData2[0]['amount'];
+
+        const balanceA = rawToTokenNumber(await token.balanceOf(accounts[1]))
+        await token.withdrawStake(amount2, 0, {from: accounts[1]})
+        const balanceB = rawToTokenNumber(await token.balanceOf(accounts[1]))
+        assertBigNumberEqualApprox(rawToTokenNumber(amount2) + rawToTokenNumber(claimable2) + balanceA, balanceB);
     });
 })
