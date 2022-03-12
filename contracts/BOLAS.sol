@@ -221,6 +221,7 @@ contract BOLAS is BEP20, Stakeable {
         // exclude wallets
         _tryExcludeFromDividends(_appsWallet);
         _tryExcludeFromDividends(_marketingWallet);
+        _tryExcludeFromDividends(_stakingWallet);
         _tryExcludeFromDividends(_liquidityWallet);
     }
 
