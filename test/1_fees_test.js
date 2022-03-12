@@ -9,6 +9,7 @@ const {
     assertBigNumberGt
 } = require("./helpers/test_utils");
 const {getNamedAccounts} = require("hardhat");
+const {getTransferAmount} = require("./helpers/test_helpers");
 let namedAccounts;
 let token;
 
@@ -115,5 +116,27 @@ contract('BOLAS FEES TEST', (accounts) => {
     it('isolated fees: staking wallet has tokens', async () => {
         const stakingWallet = await token.balanceOf(namedAccounts.stakingWallet)
         assertBigNumberGt(stakingWallet, toWei(0));
+    });
+
+    // fee on transfer
+    it('Buying tokens for 0.3 ETH should work with fee on transfer', async () => {
+        token = await testHelpers.reinitializeToken(accounts);
+        await token.setFeeOnTransferEnabled(true);
+        await testHelpers.setupLiquidity(token, accounts);
+        await testHelpers.buyTokens(token, 0.3, accounts[1]);
+        const balance = await token.balanceOf(accounts[1])
+        assert.ok(balance);
+    });
+
+    it('Selling 80,000,000 tokens for ETH should work with fee on transfer', async () => {
+        await testHelpers.sellTokens(token, 80_000_000, accounts[1]);
+        const balance = await token.balanceOf(accounts[1])
+        assert.ok(balance);
+    });
+
+    it('Transfer 10000 should work with fee on transfer', async () => {
+        await token.transfer(accounts[3], tokenToRaw(10000), {from: accounts[1]})
+        const balance = await token.balanceOf(accounts[3])
+        assertBigNumberEqual(balance, tokenToRaw(getTransferAmount(10000, fees)))
     });
 })

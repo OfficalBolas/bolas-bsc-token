@@ -17,7 +17,7 @@ import "./Staking/Stakeable.sol";
 
 contract BOLAS is ERC20, Ownable, Stakeable {
     // contract version
-    string constant version = 'v1.0.2';
+    string constant version = 'v1.0.3';
 
     // Keeps track of balances for address.
     mapping(address => uint256) private _balances;
@@ -84,6 +84,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
 
     // whether the token can already be traded
     bool public isTradingEnabled;
+    bool public isFeeOnTransferEnabled = false;
 
     bool public autoSwapAndLiquifyEnabled;
     bool public autoBurnEnabled;
@@ -516,7 +517,7 @@ contract BOLAS is ERC20, Ownable, Stakeable {
         bool hasContracts = _isContract(sender) || _isContract(recipient);
 
         // process fees
-        bool takeFee = (!_isExcludedFromFee[sender])
+        bool takeFee = isFeeOnTransferEnabled || (!_isExcludedFromFee[sender])
         && (!_isExcludedFromFee[recipient])
         && (hasContracts)
         && (!_inSwapAndLiquify)
@@ -808,6 +809,14 @@ contract BOLAS is ERC20, Ownable, Stakeable {
     function activate() public onlyOwner {
         require(!isTradingEnabled, "Trading is already enabled");
         isTradingEnabled = true;
+    }
+
+    /**
+     * @dev Switches fee on transfer on / off.
+     */
+    function setFeeOnTransferEnabled(bool enable) public onlyOwner {
+        require(!isFeeOnTransferEnabled, "Fee on transfer is already set to the value");
+        isFeeOnTransferEnabled = enable;
     }
 
     /**
