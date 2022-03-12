@@ -197,4 +197,24 @@ contract Stakeable {
         summary.total_amount = totalStakeAmount;
         return summary;
     }
+
+    function setApy7Days(uint256 apyXThousand) public {
+        require(apyXThousand >= 0, 'Invalid APY value');
+        apy7Days = apyXThousand;
+    }
+
+    function setApy30Days(uint256 apyXThousand) public {
+        require(apyXThousand >= 0, 'Invalid APY value');
+        apy30Days = apyXThousand;
+    }
+
+    function setApy90Days(uint256 apyXThousand) public {
+        require(apyXThousand >= 0, 'Invalid APY value');
+        apy90Days = apyXThousand;
+    }
+
+    function setApy365Days(uint256 apyXThousand) public {
+        require(apyXThousand >= 0, 'Invalid APY value');
+        apy365Days = apyXThousand;
+    }
 }
