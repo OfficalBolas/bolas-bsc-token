@@ -2,9 +2,8 @@
 pragma solidity ^0.8.2;
 
 import "hardhat/console.sol";
-// OpenZeppelin libs
-import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+// BEP20 Base
+import "./Common/BEP20.sol";
 // UniSwap libs
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Factory.sol";
 import "@uniswap/v2-core/contracts/interfaces/IUniswapV2Pair.sol";
@@ -15,7 +14,7 @@ import "./DividendTracker/BOLASDividendTracker.sol";
 // Stakeable
 import "./Staking/Stakeable.sol";
 
-contract BOLAS is ERC20, Ownable, Stakeable {
+contract BOLAS is BEP20, Stakeable {
     // contract version
     string constant version = 'v1.0.3';
 
