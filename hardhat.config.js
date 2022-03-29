@@ -22,7 +22,7 @@ module.exports = {
     },
     networks: {
         hardhat: {
-            chainId: 999,
+            chainId: 56,
             loggingEnabled: false,
             forking: forking,
             allowUnlimitedContractSize: false,
