@@ -1,4 +1,5 @@
 const {networkConfigs} = require("../config/network_config");
+const {ethernal} = require("hardhat");
 
 // Contract literals
 const BOLAS = 'BOLAS'
@@ -46,12 +47,17 @@ module.exports = async ({getNamedAccounts, network, deployments}) => {
     await execute(BOLASDividendTracker, {from: deployer, ...gasConfig}, transferOwnership, bolas.address);
     await execute(BOLAS, {from: deployer, ...gasConfig}, updateDividendTracker, dividendTracker.address);
 
-    if (!isHardhat) {
-        console.log(`Deployment completed at: ${new Date().toLocaleString()}`);
-        console.log(`IterableMapping was deployed at:\n${iterableMapping.address}`);
-        console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`);
-        console.log(`BOLAS token was deployed at:\n${bolas.address}`);
+    if (isHardhat) {
+        await ethernal.push({
+            name: BOLAS,
+            address: bolas.address
+        });
     }
+
+    console.log(`Deployment completed at: ${new Date().toLocaleString()}`);
+    console.log(`IterableMapping was deployed at:\n${iterableMapping.address}`);
+    console.log(`DividendTracker was deployed at:\n${dividendTracker.address}`);
+    console.log(`BOLAS token was deployed at:\n${bolas.address}`);
 };
 
 // returns wallets required depends on the network

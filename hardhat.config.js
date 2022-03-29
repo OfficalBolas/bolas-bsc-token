@@ -6,6 +6,7 @@ require('@nomiclabs/hardhat-waffle');
 require("@nomiclabs/hardhat-truffle5");
 require("@nomiclabs/hardhat-etherscan");
 require('hardhat-deploy');
+require('hardhat-ethernal');
 require('dotenv').config();
 const {forking} = require("./config/network_config");
 
